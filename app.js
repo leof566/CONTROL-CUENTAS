@@ -100,6 +100,7 @@
     $$('main section').forEach(s=>s.classList.remove('active'));
     $('#'+tab).classList.add('active');
     if(tab==='calendario') renderCalendario();
+    if(tab==='movimientos') renderMovimientos();
   }));
 
   // Servicios select
@@ -123,11 +124,11 @@
 
   // Render clientes
   async function renderClientes(){
-    const q=$('#buscar').value.trim().toLowerCase();
-    const filtro=$('#filtroEstado').value;
-    const periodo=$('#vistaPeriodo').value;
-    const filtroNom=$('#filtroNombre').value.trim().toLowerCase();
-    const filtroSvc=$('#filtroServicio').value;
+    const q = filtros.clientes.q;
+    const filtro = filtros.clientes.est;
+    const periodo = filtros.clientes.periodo;
+    const filtroNom = filtros.clientes.nom;
+    const filtroSvc = filtros.clientes.svc;
 
     const data=await allClientes();
     const tb=$('#tablaClientes tbody'); tb.innerHTML='';
@@ -137,8 +138,7 @@
       const texto=(c.nombre+' '+c.apellido+' '+c.email+' '+c.servicio).toLowerCase();
       const okQ=!q || texto.includes(q);
       const okNom=!filtroNom || ( (c.nombre+' '+c.apellido).toLowerCase().includes(filtroNom) );
-      const est=calcEstado(c.fin).k;
-      let okF=true;
+      const est=calcEstado(c.fin).k; let okF=true;
       if(filtro==='activos') okF=(est==='activo');
       if(filtro==='vencidos') okF=(est==='vencido');
       if(filtro==='hoy') okF=(est==='hoy');
@@ -198,9 +198,12 @@
 
   // Guardar cliente
   $('#formCliente').addEventListener('submit', async (e)=>{
+    // Validaciones y guardado con feedback
     e.preventDefault();
     const id=Number($('#clienteId').value)||undefined;
     const inicio=$('#inicio').value, fin=$('#fin').value;
+    // completar servicio si vacío
+    if(!$('#servicio').value){ const sel=$('#servicio'); if(sel.options.length>0) sel.value=sel.options[0].value; }
     const obj={
       id,
       nombre:$('#nombre').value.trim(),
@@ -220,10 +223,15 @@
     obj.passPlain = $('#contrasenaVisible').value.trim();
 
     const isNew = !id;
-    const rid = await saveCliente(obj);
-    await addMov({tipo:isNew?'ALTA':'EDICIÓN', cliente:obj.nombre+' '+obj.apellido, servicio:obj.servicio, plan:obj.plan, monto:obj.precio, notas:isNew?'Alta de cliente':'Edición de datos'});
-    $('#clienteId').value = rid || id || '';
-    await renderClientes(); if($('#calendario').classList.contains('active')) renderCalendario();
+    try{
+      const rid = await saveCliente(obj);
+      await addMov({tipo:isNew?'ALTA':'EDICIÓN', cliente:obj.nombre+' '+obj.apellido, servicio:obj.servicio, plan:obj.plan, monto:obj.precio, notas:isNew?'Alta de cliente':'Edición de datos'});
+      $('#clienteId').value = rid || id || '';
+      await renderClientes(); if($('#calendario').classList.contains('active')) renderCalendario();
+      alert('✔ Registro guardado correctamente');
+    }catch(err){
+      console.error(err); alert('❌ No se pudo guardar. Revisa los campos obligatorios.');
+    }
     $('#contrasena').value='';
   });
 
@@ -248,11 +256,48 @@
   });
 
   // Filtros / búsqueda
-  $('#buscar').addEventListener('input', renderClientes);
-  $('#filtroEstado').addEventListener('change', renderClientes);
-  $('#vistaPeriodo').addEventListener('change', renderClientes);
-  $('#filtroServicio').addEventListener('change', renderClientes);
-  $('#filtroNombre').addEventListener('input', renderClientes);
+
+
+
+
+
+
+  
+  // Estado de filtros global
+  const filtros = {
+    clientes: { q:'', nom:'', svc:'todos', est:'todos', periodo:'mensual' },
+    movs: { q:'', tipo:'todos', svc:'todos', desde:'', hasta:'' }
+  };
+
+  // Enlazar filtros Clientes
+  const bindClienteFilters = ()=>{
+    $('#buscar').addEventListener('input', ()=>{ filtros.clientes.q = $('#buscar').value.trim().toLowerCase(); renderClientes(); });
+    $('#filtroNombre').addEventListener('input', ()=>{ filtros.clientes.nom = $('#filtroNombre').value.trim().toLowerCase(); renderClientes(); });
+    $('#filtroServicio').addEventListener('change', ()=>{ filtros.clientes.svc = $('#filtroServicio').value; renderClientes(); });
+    $('#filtroEstado').addEventListener('change', ()=>{ filtros.clientes.est = $('#filtroEstado').value; renderClientes(); });
+    $('#vistaPeriodo').addEventListener('change', ()=>{ filtros.clientes.periodo = $('#vistaPeriodo').value; renderClientes(); });
+  };
+
+  // Enlazar filtros Movimientos
+  const bindMovFilters = ()=>{
+    const el = (id)=> document.getElementById(id);
+    el('movBuscar').addEventListener('input', ()=>{ filtros.movs.q = el('movBuscar').value.trim().toLowerCase(); renderMovimientos(); });
+    el('movTipo').addEventListener('change', ()=>{ filtros.movs.tipo = el('movTipo').value; renderMovimientos(); });
+    el('movDesde').addEventListener('change', ()=>{ filtros.movs.desde = el('movDesde').value; renderMovimientos(); });
+    el('movHasta').addEventListener('change', ()=>{ filtros.movs.hasta = el('movHasta').value; renderMovimientos(); });
+    el('movServicio').addEventListener('change', ()=>{ filtros.movs.svc = el('movServicio').value; renderMovimientos(); });
+  };
+
+  async function populateMovServicios(){
+    const sel = document.getElementById('movServicio'); if(!sel) return;
+    const list = await allServicios();
+    const current = sel.value || 'todos';
+    sel.innerHTML = '<option value="todos">Todos los servicios</option>';
+    list.sort((a,b)=>a.nombre.localeCompare(b.nombre)).forEach(s=>{
+      const o=document.createElement('option'); o.value=s.nombre; o.textContent=s.nombre; sel.appendChild(o);
+    });
+    sel.value=current;
+  }
 
   // Export helpers
   function exportCSV(rows, filename){
@@ -279,6 +324,11 @@
   }
 
   // Export clientes
+  // Copiar usuario y contraseña visible
+  function copyText(el){ if(!el) return; el.select(); el.setSelectionRange(0, 99999); document.execCommand('copy'); }
+  const btnU = document.getElementById('copyUsuario'); if(btnU) btnU.addEventListener('click', ()=>{ copyText(document.getElementById('usuarioPlataforma')); alert('Usuario copiado'); });
+  const btnP = document.getElementById('copyPassVisible'); if(btnP) btnP.addEventListener('click', ()=>{ copyText(document.getElementById('contrasenaVisible')); alert('Contraseña visible copiada'); });
+
   $('#exportCSV').addEventListener('click', async()=>{
     const data=await allClientes();
     const rows=data.map(c=>({
@@ -319,6 +369,36 @@
     html+='</tbody></table>'; exportTableAsPDF(html,'movimientos.pdf');
   });
 
+
+  async function renderMovimientos(){
+    const tb = document.querySelector('#tablaMov tbody'); if(!tb) return;
+    const data = await allMov();
+    const q = filtros.movs.q;
+    const tipo = filtros.movs.tipo;
+    const svc = filtros.movs.svc;
+    const desde = filtros.movs.desde ? new Date(filtros.movs.desde) : null;
+    const hasta = filtros.movs.hasta ? new Date(filtros.movs.hasta) : null;
+
+    let rows = data.filter(m=>{
+      const text = (m.cliente+' '+m.servicio+' '+(m.notas||'')).toLowerCase();
+      let ok = !q || text.includes(q);
+      if(tipo!=='todos') ok = ok && (m.tipo===tipo);
+      if(svc!=='todos') ok = ok && (m.servicio===svc);
+      if(desde) ok = ok && (new Date(m.fecha) >= desde);
+      if(hasta){ const h = new Date(hasta); h.setHours(23,59,59,999); ok = ok && (new Date(m.fecha) <= h); }
+      return ok;
+    });
+
+    rows.sort((a,b)=> new Date(b.fecha) - new Date(a.fecha));
+
+    tb.innerHTML = '';
+    for(const m of rows){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${m.fecha}</td><td>${m.tipo}</td><td>${m.cliente}</td><td>${m.servicio}</td><td>${m.plan}</td><td>${m.monto}</td><td>${(m.notas||'').replace(/</g,'&lt;')}</td>`;
+      tb.appendChild(tr);
+    }
+  }
+
   // Calendario
   function startOfMonth(d){ const x=new Date(d); x.setDate(1); return x; }
   function endOfMonth(d){ const x=new Date(d); x.setMonth(x.getMonth()+1,0); return x; }
@@ -332,11 +412,14 @@
     for(let i=0;i<startPad;i++) grid.appendChild(document.createElement('div'));
     allClientes().then(list=>{
       list.forEach(c=>c._fin=new Date(c.fin));
+
       for(let day=1; day<=fin.getDate(); day++){
         const d=new Date(anio,mes,day); const box=document.createElement('div'); box.className='day';
         const n=document.createElement('div'); n.className='num'; n.textContent=day; box.appendChild(n);
         const esos=list.filter(c=> c._fin.getFullYear()===anio && c._fin.getMonth()===mes && c._fin.getDate()===day);
+        if(esos.length){ const badge=document.createElement('div'); badge.className='chip'; badge.textContent=esos.length+' venc.'; box.appendChild(badge); }
         esos.forEach(c=>{
+
           const tag=document.createElement('div'); tag.className='tag';
           const estado=calcEstado(c.fin).k;
           if(estado==='hoy') tag.classList.add('st-warn'); else if(estado==='vencido') tag.classList.add('st-bad'); else tag.classList.add('st-ok');
@@ -395,7 +478,7 @@
     if(Array.isArray(data.servicios)) for(const s of data.servicios) await saveServicio(s);
     if(Array.isArray(data.clientes)) for(const c of data.clientes) await saveCliente(c);
     if(Array.isArray(data.movimientos)) for(const m of data.movimientos) await addMov(m);
-    await renderServicios(); await refreshServiciosSelect(); await populateFiltroServicios(); await renderClientes(); renderCalendario();
+    await renderServicios(); await refreshServiciosSelect(); await populateFiltroServicios(); await populateMovServicios(); bindClienteFilters(); bindMovFilters(); await renderClientes(); await renderMovimientos(); renderCalendario();
     alert('Respaldo importado.');
   });
 
@@ -419,7 +502,7 @@
     await openDB();
     await ensureDefaultServices();
     $('#inicio').value=todayStr(); $('#fin').value=todayStr();
-    await renderServicios(); await refreshServiciosSelect(); await populateFiltroServicios(); await renderClientes(); renderCalendario();
+    await renderServicios(); await refreshServiciosSelect(); await populateFiltroServicios(); await populateMovServicios(); bindClienteFilters(); bindMovFilters(); await renderClientes(); await renderMovimientos(); renderCalendario();
     if('serviceWorker' in navigator){ try{ await navigator.serviceWorker.register('./service-worker.js'); }catch{} }
   })();
 })();

@@ -40,6 +40,7 @@
       <h1>📦 Control de Ventas de Plataformas</h1>
       <nav id="tabs">
         <button data-tab="clientes" class="active">Clientes</button>
+        <button data-tab="filtros">Filtros</button>
         <button data-tab="calendario">Calendario</button>
         <button data-tab="movimientos">Movimientos</button>
         <button data-tab="servicios">Servicios</button>
@@ -74,6 +75,10 @@
               <div><label>Contraseña entregada <span class="muted">(se cifra con clave maestra)</span></label><input id="contrasena" type="password" /></div>
               <div><label>Contraseña visible (no cifrada)</label><input id="contrasenaVisible" type="text" placeholder="texto plano" /></div>
             </div>
+            <div class="flex">
+              <button class="btn" type="button" id="copyUsuario">Copiar usuario</button>
+              <button class="btn" type="button" id="copyPassVisible">Copiar contraseña visible</button>
+            </div>
             <div class="row"><div><label>Notas internas</label><textarea id="notas" rows="2" placeholder="Ej: paga en efectivo, combo con Spotify"></textarea></div></div>
             <div class="row row-2">
               <div><label>Inicio</label><input id="inicio" type="date" required /></div>
@@ -91,13 +96,7 @@
         </div>
         <div class="card">
           <div class="toolbar flex">
-            <input id="buscar" placeholder="Buscar (nombre/email/servicio)..." />
-            <input id="filtroNombre" placeholder="Filtrar por Nombre/Apellido..." />
-            <select id="filtroServicio"><option value="todos">Todos los servicios</option></select>
-            <select id="filtroEstado">
-              <option value="todos">Todos</option><option value="activos">Activos</option><option value="vencidos">Vencidos</option><option value="hoy">Vencen hoy</option>
-            </select>
-            <select id="vistaPeriodo"><option value="mensual">Vista mensual</option><option value="semanal">Vista semanal</option></select>
+            <div class="muted">Usá la pestaña <strong>Filtros</strong> para buscar/filtrar</div>
             <div class="right"></div>
             <button class="btn" id="exportCSV">CSV</button>
             <button class="btn" id="exportXLS">Excel (.xls)</button>
@@ -192,6 +191,44 @@
       </div>
       <div class="card"><h2>Acerca de</h2><p class="small">Funciona offline, instalable como PWA. Datos en IndexedDB. © 2025 — Creada por Leonardo Díaz</p></div>
     </section>
+  
+    <section id="filtros">
+      <div class="grid grid-2">
+        <div class="card">
+          <h2>Filtros de Clientes</h2>
+          <div class="row">
+            <input id="buscar" placeholder="Buscar (nombre/email/servicio)..." />
+            <input id="filtroNombre" placeholder="Filtrar por Nombre/Apellido..." />
+            <div class="row row-2">
+              <select id="filtroServicio"><option value="todos">Todos los servicios</option></select>
+              <select id="filtroEstado">
+                <option value="todos">Todos</option><option value="activos">Activos</option><option value="vencidos">Vencidos</option><option value="hoy">Vencen hoy</option>
+              </select>
+            </div>
+            <select id="vistaPeriodo"><option value="mensual">Vista mensual</option><option value="semanal">Vista semanal</option></select>
+          </div>
+          <p class="muted small">Los filtros se aplican automáticamente en la lista de Clientes.</p>
+        </div>
+        <div class="card">
+          <h2>Filtros de Movimientos</h2>
+          <div class="row">
+            <div class="row row-2">
+              <input id="movBuscar" placeholder="Buscar (cliente/servicio/notas)..." />
+              <select id="movTipo">
+                <option value="todos">Todos</option><option value="ALTA">ALTA</option><option value="EDICIÓN">EDICIÓN</option><option value="RENOVACIÓN">RENOVACIÓN</option><option value="BAJA">BAJA</option>
+              </select>
+            </div>
+            <div class="row row-2">
+              <input id="movDesde" type="date" placeholder="Desde" />
+              <input id="movHasta" type="date" placeholder="Hasta" />
+            </div>
+            <select id="movServicio"><option value="todos">Todos los servicios</option></select>
+          </div>
+          <p class="muted small">Los filtros se aplican en la pestaña Movimientos.</p>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <script src="app.js"></script>
