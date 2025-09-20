@@ -7,102 +7,31 @@
   <meta name="theme-color" content="#0b0d10" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" sizes="192x192" href="icons/icon-192.png" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <style>
-    :root{
-      --bg:#0b0d10;
-      --bg2:#11151b;
-      --card:#161b22;
-      --text:#e6edf3;
-      --muted:#9aa7b2;
-      --accent:#33b1ff;
-      --ok:#25a244;
-      --warn:#ffd43b;
-      --bad:#ff6b6b;
-      --link:#7cc6fe;
-      --border:#263040;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      background:linear-gradient(180deg,var(--bg) 0%, var(--bg2) 100%);
-      color:var(--text);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      line-height:1.45;
-    }
-    header{
-      position:sticky; top:0; z-index:10;
-      background:rgba(11,13,16,0.9);
-      backdrop-filter: blur(6px);
-      border-bottom:1px solid var(--border);
-    }
-    .wrap{max-width:1100px; margin:0 auto; padding:14px 16px;}
-    h1{font-size:1.25rem; margin:0}
-    nav{
-      display:flex; gap:8px; flex-wrap:wrap; margin-top:8px
-    }
-    nav button{
-      background:var(--card); color:var(--text);
-      border:1px solid var(--border); border-radius:12px; padding:8px 12px;
-      cursor:pointer; transition:transform .05s ease, background .2s ease;
-      font-weight:600;
-    }
+    :root{--bg:#0b0d10;--bg2:#11151b;--card:#161b22;--text:#e6edf3;--muted:#9aa7b2;--accent:#33b1ff;--ok:#25a244;--warn:#ffd43b;--bad:#ff6b6b;--border:#263040;}
+    *{box-sizing:border-box} html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,var(--bg),var(--bg2));color:var(--text);font-family:system-ui,Segoe UI,Roboto,Arial}
+    header{position:sticky;top:0;z-index:10;background:rgba(11,13,16,.9);backdrop-filter:blur(6px);border-bottom:1px solid var(--border)}
+    .wrap{max-width:1100px;margin:0 auto;padding:14px 16px}
+    h1{font-size:1.25rem;margin:0} nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    nav button{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:8px 12px;cursor:pointer;font-weight:600}
     nav button.active{outline:2px solid var(--accent)}
-    main{padding:18px 16px}
-    section{display:none; max-width:1100px; margin:0 auto}
-    section.active{display:block}
-    .grid{display:grid; gap:12px}
-    @media(min-width:900px){ .grid-2{grid-template-columns: 1fr 1fr} }
-    .card{
-      background:var(--card); border:1px solid var(--border);
-      border-radius:16px; padding:14px;
-      box-shadow: 0 4px 14px rgba(0,0,0,.25);
-    }
-    label{display:block; font-size:.9rem; color:var(--muted); margin-bottom:6px}
-    input,select,textarea{
-      width:100%; padding:10px 12px; border-radius:12px; border:1px solid var(--border);
-      background:#0e1318; color:var(--text);
-      outline:none;
-    }
-    .row{display:grid; gap:10px}
-    @media(min-width:680px){ .row-2{grid-template-columns:1fr 1fr} .row-3{grid-template-columns:1fr 1fr 1fr} }
-    .btn{
-      display:inline-flex; align-items:center; justify-content:center;
-      gap:8px; padding:10px 14px; border-radius:12px; border:1px solid var(--border);
-      background:#0f1621; color:var(--text); cursor:pointer; font-weight:600;
-    }
-    .btn.primary{background:var(--accent); color:#001018; border-color:#2aa3ee}
-    .btn.warn{background:var(--warn); color:#321e00}
-    .btn.ok{background:var(--ok); color:#00170a}
-    .btn.bad{background:var(--bad); color:#2c0000}
-    table{width:100%; border-collapse:collapse; font-size:.95rem}
-    th,td{padding:10px 8px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top}
-    th{color:var(--muted); font-weight:700}
-    tr:hover{background:#0f1420}
-    .chip{display:inline-flex; padding:2px 8px; border-radius:999px; border:1px solid var(--border); font-size:.75rem}
-    .st-ok{background:rgba(37,162,68,.18)}
-    .st-warn{background:rgba(255,212,59,.18); color:#f6d45b}
-    .st-bad{background:rgba(255,107,107,.18)}
-    .st-up{background:rgba(100,149,237,.18)}
-    .muted{color:var(--muted)}
-    .flex{display:flex; gap:10px; flex-wrap:wrap}
-    .right{margin-left:auto}
-    .calendar{display:grid; grid-template-columns: repeat(7,1fr); gap:6px}
-    .cal-head{display:grid; grid-template-columns: repeat(7,1fr); gap:6px; margin-bottom:6px; color:var(--muted); font-weight:700}
-    .day{
-      border:1px solid var(--border); border-radius:12px; padding:8px; min-height:90px; background:#0e1318;
-      display:flex; flex-direction:column; gap:6px;
-    }
-    .day .num{font-weight:700; color:var(--muted)}
-    .tag{font-size:.7rem; border-radius:8px; padding:3px 6px; border:1px solid var(--border)}
-    .tag.warn{background:rgba(255,212,59,.18)}
-    .tag.bad{background:rgba(255,107,107,.18)}
-    .tag.ok{background:rgba(37,162,68,.18)}
-    .tag.up{background:rgba(100,149,237,.18)}
-    .toolbar{display:flex; gap:10px; align-items:center; margin-bottom:10px}
-    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace}
-    .small{font-size:.85rem}
+    main{padding:18px 16px} section{display:none;max-width:1100px;margin:0 auto} section.active{display:block}
+    .grid{display:grid;gap:12px} @media(min-width:900px){.grid-2{grid-template-columns:1fr 1fr}}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+    label{display:block;font-size:.9rem;color:var(--muted);margin-bottom:6px}
+    input,select,textarea{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:#0e1318;color:var(--text);outline:none}
+    .row{display:grid;gap:10px} @media(min-width:680px){.row-2{grid-template-columns:1fr 1fr}.row-3{grid-template-columns:1fr 1fr 1fr}}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:#0f1621;color:var(--text);cursor:pointer;font-weight:600}
+    .btn.primary{background:var(--accent);color:#001018;border-color:#2aa3ee} .btn.warn{background:var(--warn);color:#321e00} .btn.bad{background:var(--bad);color:#2c0000}
+    table{width:100%;border-collapse:collapse;font-size:.95rem} th,td{padding:10px 8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+    th{color:var(--muted);font-weight:700} tr:hover{background:#0f1420}
+    .chip{display:inline-flex;padding:2px 8px;border-radius:999px;border:1px solid var(--border);font-size:.75rem}
+    .st-ok{background:rgba(37,162,68,.18)} .st-warn{background:rgba(255,212,59,.18);color:#f6d45b} .st-bad{background:rgba(255,107,107,.18)}
+    .muted{color:var(--muted)} .flex{display:flex;gap:10px;flex-wrap:wrap} .right{margin-left:auto} .mono{font-family:ui-monospace,Consolas,Menlo,monospace}
+    .calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.cal-head{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px;color:var(--muted);font-weight:700}
+    .day{border:1px solid var(--border);border-radius:12px;padding:8px;min-height:90px;background:#0e1318;display:flex;flex-direction:column;gap:6px}
+    .day .num{font-weight:700;color:var(--muted)} .tag{font-size:.7rem;border-radius:8px;padding:3px 6px;border:1px solid var(--border)}
   </style>
 </head>
 <body>
@@ -121,7 +50,6 @@
   </header>
 
   <main>
-    <!-- CLIENTES -->
     <section id="clientes" class="active">
       <div class="grid grid-2">
         <div class="card">
@@ -129,64 +57,27 @@
           <form id="formCliente">
             <input type="hidden" id="clienteId" />
             <div class="row row-2">
-              <div>
-                <label>Nombre</label>
-                <input id="nombre" required />
-              </div>
-              <div>
-                <label>Apellido</label>
-                <input id="apellido" required />
-              </div>
+              <div><label>Nombre</label><input id="nombre" required /></div>
+              <div><label>Apellido</label><input id="apellido" required /></div>
             </div>
             <div class="row row-2">
-              <div>
-                <label>Email</label>
-                <input id="email" type="email" placeholder="cliente@email.com" required />
-              </div>
-              <div>
-                <label>Servicio contratado</label>
-                <select id="servicio"></select>
-              </div>
+              <div><label>Email</label><input id="email" type="email" required placeholder="cliente@email.com" /></div>
+              <div><label>Servicio contratado</label><select id="servicio"></select></div>
             </div>
             <div class="row row-3">
-              <div>
-                <label>Plan</label>
-                <select id="plan">
-                  <option value="mensual">Mensual</option>
-                  <option value="anual">Anual</option>
-                </select>
-              </div>
-              <div>
-                <label>Precio (ARS)</label>
-                <input id="precio" type="number" step="0.01" min="0" required />
-              </div>
-              <div>
-                <label>Estado</label>
-                <select id="estado">
-                  <option value="activo">Activo</option>
-                  <option value="suspendido">Suspendido</option>
-                </select>
-              </div>
+              <div><label>Plan</label><select id="plan"><option value="mensual">Mensual</option><option value="anual">Anual</option></select></div>
+              <div><label>Precio (ARS)</label><input id="precio" type="number" step="0.01" min="0" required /></div>
+              <div><label>Estado</label><select id="estado"><option value="activo">Activo</option><option value="suspendido">Suspendido</option></select></div>
             </div>
-            <div class="row row-2">
-              <div>
-                <label>Usuario de la plataforma</label>
-                <input id="usuarioPlataforma" placeholder="correo o usuario" />
-              </div>
-              <div>
-                <label>Contraseña entregada <span class="muted">(se cifra en el dispositivo)</span></label>
-                <input id="contrasena" type="password" />
-              </div>
+            <div class="row row-3">
+              <div><label>Usuario de la plataforma</label><input id="usuarioPlataforma" placeholder="correo o usuario" /></div>
+              <div><label>Contraseña entregada <span class="muted">(se cifra con clave maestra)</span></label><input id="contrasena" type="password" /></div>
+              <div><label>Contraseña visible (no cifrada)</label><input id="contrasenaVisible" type="text" placeholder="texto plano" /></div>
             </div>
+            <div class="row"><div><label>Notas internas</label><textarea id="notas" rows="2" placeholder="Ej: paga en efectivo, combo con Spotify"></textarea></div></div>
             <div class="row row-2">
-              <div>
-                <label>Inicio</label>
-                <input id="inicio" type="date" required />
-              </div>
-              <div>
-                <label>Fin</label>
-                <input id="fin" type="date" required />
-              </div>
+              <div><label>Inicio</label><input id="inicio" type="date" required /></div>
+              <div><label>Fin</label><input id="fin" type="date" required /></div>
             </div>
             <div class="flex">
               <button class="btn primary" type="submit">Guardar</button>
@@ -196,112 +87,73 @@
               <button class="btn bad" type="button" id="btnEliminar">Eliminar</button>
             </div>
           </form>
-          <p class="small muted">Guardado automático: cada alta/edición queda registrada y se agrega al historial de movimientos.</p>
+          <p class="muted" style="font-size:.85rem">Guardado automático: cada alta/edición queda en Movimientos.</p>
         </div>
         <div class="card">
-          <div class="toolbar">
-            <input id="buscar" placeholder="Buscar por nombre, email o servicio..." />
+          <div class="toolbar flex">
+            <input id="buscar" placeholder="Buscar (nombre/email/servicio)..." />
+            <input id="filtroNombre" placeholder="Filtrar por Nombre/Apellido..." />
+            <select id="filtroServicio"><option value="todos">Todos los servicios</option></select>
             <select id="filtroEstado">
-              <option value="todos">Todos</option>
-              <option value="activos">Activos</option>
-              <option value="vencidos">Vencidos</option>
-              <option value="hoy">Vencen hoy</option>
+              <option value="todos">Todos</option><option value="activos">Activos</option><option value="vencidos">Vencidos</option><option value="hoy">Vencen hoy</option>
             </select>
-            <select id="vistaPeriodo">
-              <option value="mensual">Vista mensual</option>
-              <option value="semanal">Vista semanal</option>
-            </select>
+            <select id="vistaPeriodo"><option value="mensual">Vista mensual</option><option value="semanal">Vista semanal</option></select>
             <div class="right"></div>
             <button class="btn" id="exportCSV">CSV</button>
             <button class="btn" id="exportXLS">Excel (.xls)</button>
             <button class="btn" id="exportPDF">PDF</button>
           </div>
           <table id="tablaClientes">
-            <thead>
-              <tr>
-                <th>Cliente</th>
-                <th>Email</th>
-                <th>Servicio/Plan</th>
-                <th>Inicio → Fin</th>
-                <th>Precio</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
+            <thead><tr><th>Cliente</th><th>Email</th><th>Servicio/Plan</th><th>Inicio → Fin</th><th>Días</th><th>Precio</th><th>Estado</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
       </div>
     </section>
 
-    <!-- CALENDARIO -->
     <section id="calendario">
       <div class="card">
-        <div class="toolbar">
+        <div class="flex">
           <button class="btn" id="prevMes">◀</button>
           <strong id="mesActual"></strong>
           <button class="btn" id="sigMes">▶</button>
           <div class="right"></div>
-          <span class="chip st-up">Próximo</span>
+          <span class="chip st-ok">Activo</span>
           <span class="chip st-warn">Vence hoy</span>
           <span class="chip st-bad">Vencido</span>
-          <span class="chip st-ok">Activo</span>
         </div>
-        <div class="cal-head">
-          <div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div>
-        </div>
+        <div class="cal-head"><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div></div>
         <div id="gridCal" class="calendar"></div>
       </div>
     </section>
 
-    <!-- MOVIMIENTOS -->
     <section id="movimientos">
       <div class="card">
-        <div class="toolbar">
+        <div class="flex">
           <div class="right"></div>
           <button class="btn" id="exportMovCSV">CSV</button>
           <button class="btn" id="exportMovXLS">Excel (.xls)</button>
           <button class="btn" id="exportMovPDF">PDF</button>
         </div>
-        <table id="tablaMov">
-          <thead>
-            <tr><th>Fecha</th><th>Tipo</th><th>Cliente</th><th>Servicio</th><th>Plan</th><th>Monto (ARS)</th><th>Notas</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+        <table id="tablaMov"><thead><tr><th>Fecha</th><th>Tipo</th><th>Cliente</th><th>Servicio</th><th>Plan</th><th>Monto (ARS)</th><th>Notas</th></tr></thead><tbody></tbody></table>
       </div>
     </section>
 
-    <!-- SERVICIOS -->
     <section id="servicios">
       <div class="grid grid-2">
         <div class="card">
           <h2>Servicios</h2>
-          <p class="small muted">Agrega, edita o elimina servicios. Define precios sugeridos y duración por plan.</p>
+          <p class="muted" style="font-size:.85rem">Agrega/edita servicios. Los precios sugeridos quedan a 0 para que vos los pongas.</p>
           <form id="formServicio">
             <input type="hidden" id="servicioId" />
             <div class="row row-2">
-              <div>
-                <label>Nombre del servicio</label>
-                <input id="svcNombre" placeholder="CANVA, NETFLIX, etc." required />
-              </div>
-              <div>
-                <label>Alias/Grupo (opcional)</label>
-                <input id="svcGrupo" placeholder="Streaming, Software, Música..." />
-              </div>
+              <div><label>Nombre del servicio</label><input id="svcNombre" placeholder="CANVA, NETFLIX..." required /></div>
+              <div><label>Alias/Grupo (opcional)</label><input id="svcGrupo" placeholder="Streaming, Software..." /></div>
             </div>
             <div class="row row-3">
-              <div>
-                <label>Precio mensual sugerido (ARS)</label>
-                <input id="svcMensual" type="number" step="0.01" min="0" />
-              </div>
-              <div>
-                <label>Precio anual sugerido (ARS)</label>
-                <input id="svcAnual" type="number" step="0.01" min="0" />
-              </div>
-              <div>
-                <label>Color identificador</label>
-                <input id="svcColor" type="color" value="#7cc6fe" />
-              </div>
+              <div><label>Precio mensual sugerido (ARS)</label><input id="svcMensual" type="number" step="0.01" min="0" value="0" /></div>
+              <div><label>Precio anual sugerido (ARS)</label><input id="svcAnual" type="number" step="0.01" min="0" value="0" /></div>
+              <div><label>Color</label><input id="svcColor" type="color" value="#7cc6fe" /></div>
             </div>
             <div class="flex">
               <button class="btn primary" type="submit">Guardar servicio</button>
@@ -311,15 +163,11 @@
           </form>
         </div>
         <div class="card">
-          <table id="tablaSvc">
-            <thead><tr><th>Servicio</th><th>Mensual</th><th>Anual</th><th>Grupo</th></tr></thead>
-            <tbody></tbody>
-          </table>
+          <table id="tablaSvc"><thead><tr><th>Servicio</th><th>Mensual</th><th>Anual</th><th>Grupo</th></tr></thead><tbody></tbody></table>
         </div>
       </div>
     </section>
 
-    <!-- RESPALDO -->
     <section id="respaldo">
       <div class="card">
         <h2>Respaldo y restauración</h2>
@@ -328,35 +176,21 @@
           <input type="file" id="fileRestore" accept="application/json" />
           <button class="btn" id="btnImportar">Importar respaldo</button>
         </div>
-        <p class="small muted">El respaldo contiene clientes, servicios y movimientos. Se guarda localmente en tu dispositivo.</p>
+        <p class="muted" style="font-size:.85rem">El respaldo contiene clientes, servicios y movimientos. Se guarda localmente.</p>
       </div>
     </section>
 
-    <!-- AJUSTES -->
     <section id="ajustes">
       <div class="card">
         <h2>Seguridad y preferencias</h2>
-        <p class="small">Puedes definir una <strong>clave maestra</strong> para cifrar las contraseñas que guardes. Sin esta clave, las contraseñas no se podrán leer al restaurar el respaldo en otro equipo.</p>
+        <p class="small">Definí una <strong>clave maestra</strong> para cifrar contraseñas entregadas. Sin esa clave, no se pueden leer al restaurar en otro equipo.</p>
         <div class="row row-3">
-          <div>
-            <label>Nueva clave maestra</label>
-            <input id="masterNew" type="password" />
-          </div>
-          <div>
-            <label>Confirmar clave</label>
-            <input id="masterConfirm" type="password" />
-          </div>
-          <div style="display:flex; align-items:end">
-            <button class="btn primary" id="btnSetMaster" type="button">Guardar clave</button>
-          </div>
+          <div><label>Nueva clave maestra</label><input id="masterNew" type="password" /></div>
+          <div><label>Confirmar clave</label><input id="masterConfirm" type="password" /></div>
+          <div style="display:flex;align-items:end"><button class="btn primary" id="btnSetMaster" type="button">Guardar clave</button></div>
         </div>
-        <p class="small muted">Sugerencia: anótala en un lugar seguro. Si la olvidas, no podremos recuperar contraseñas cifradas.</p>
       </div>
-      <div class="card">
-        <h2>Acerca de</h2>
-        <p class="small">Funciona completamente <strong>offline</strong>. Se instala como App (PWA). Datos en <span class="mono">IndexedDB</span>. Exporta CSV, Excel compatible y PDF (impresión).</p>
-        <p class="small">© 2025 — Creada por Leonardo Díaz</p>
-      </div>
+      <div class="card"><h2>Acerca de</h2><p class="small">Funciona offline, instalable como PWA. Datos en IndexedDB. © 2025 — Creada por Leonardo Díaz</p></div>
     </section>
   </main>
 
