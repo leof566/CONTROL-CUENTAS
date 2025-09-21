@@ -63,13 +63,17 @@ async function renderClientes(){
     const dias = daysBetween(new Date(), new Date(c.fin));
     const diasStr = (fmtDate(c.fin)===hoy) ? '0' : (dias>0? dias : `-${Math.abs(dias)}`);
     const tr=document.createElement('tr');
-    tr.innerHTML = `<td><strong>${c.nombre||''} ${c.apellido||''}</strong><div class="chip">${c.usuarioPlataforma||''}</div><div class="chip">${c.notas?('📝 '+c.notas):''}</div></td>
-      <td>${c.email||''}</td>
-      <td>${c.servicio||''} <span class="chip">${c.plan||''}</span></td>
-      <td>${fmtDate(c.inicio)} → ${fmtDate(c.fin)}</td>
-      <td>${diasStr}</td>
-      <td>$ ${Number(c.precio||0).toFixed(2)}</td>
-      <td><span class="chip">${est.label}</span></td>`;
+    tr.innerHTML = `<td>
+        <strong class="ellipsis">${c.nombre||''} ${c.apellido||''}</strong>
+        <div class="mono ellipsis muted">${c.usuarioPlataforma||''}</div>
+        ${c.notas?`<div class=\"chip ellipsis\">📝 ${c.notas}</div>`:''}
+      </td>
+      <td><span class="ellipsis">${c.email||''}</span></td>
+      <td><span class="ellipsis">${c.servicio||''}</span> <span class="chip">${c.plan||''}</span></td>
+      <td class="nowrap">${fmtDate(c.inicio)} → ${fmtDate(c.fin)}</td>
+      <td class="nowrap">${diasStr}</td>
+      <td class="nowrap">$ ${Number(c.precio||0).toFixed(2)}</td>
+      <td class="nowrap"><span class="chip">${est.label}</span></td>`;
     tr.addEventListener('click',()=> loadClienteToForm(c));
     tb.appendChild(tr);
   }
