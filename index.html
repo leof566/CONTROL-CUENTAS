@@ -73,7 +73,9 @@
 <section id="calendario" class="card"><h2>Calendario</h2><div id="gridCal"></div></section>
 <section id="movimientos" class="card"><h2>Movimientos</h2><table id="tablaMov"><thead><tr><th>Fecha</th><th>Tipo</th><th>Cliente</th><th>Servicio</th><th>Plan</th><th>Monto</th><th>Notas</th></tr></thead><tbody></tbody></table></section>
 <section id="servicios" class="card"><h2>Servicios</h2><form id="formServicio"><input type="hidden" id="servicioId"/><input id="svcNombre" placeholder="Nombre"/><input id="svcGrupo" placeholder="Grupo"/><input id="svcMensual" type="number" step="0.01"/><input id="svcAnual" type="number" step="0.01"/><button class="btn" type="submit">Guardar servicio</button></form><table id="tablaSvc"><thead><tr><th>Servicio</th><th>Mensual</th><th>Anual</th><th>Grupo</th></tr></thead><tbody></tbody></table></section>
-<section id="respaldo" class="card"><h2>Respaldo</h2><button class="btn" id="btnBackupJSON">Exportar JSON</button><input id="fileRestore" type="file" accept="application/json"/><button class="btn" id="btnImportar">Importar</button></section>
+<section id="respaldo" class="card"><h2>Respaldo</h2><button class="btn" id="btnBackupJSON">Exportar JSON</button><input id="fileRestore" type="file" accept="application/json"/><button class="btn" id="btnImportar">Importar</button> <button class="btn" id="btnClearDB" type="button">Reparar datos (borrar base)</button>  <script>
+  </script>
+</section>
 </main>
 <script src="app.js"></script>
 </body></html>
