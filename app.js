@@ -16,10 +16,39 @@
   const saveServicio=(s)=>new Promise((r,j)=>{const q=tx('servicios','readwrite').put(s); q.onsuccess=()=>r(q.result); q.onerror=()=>j(q.error);});
   const allServicios=()=>new Promise((r,j)=>{const q=tx('servicios').getAll(); q.onsuccess=()=>r(q.result||[]); q.onerror=()=>j(q.error);});
 
+
+async function ensureOneServiceOption(){
+  try{
+    const sel = document.getElementById('servicio');
+    if(!sel) return;
+    if(sel.options.length===0){
+      // seed default service
+      if (typeof saveServicio === 'function') {
+        await saveServicio({id: Date.now(), nombre:'SIN ASIGNAR', grupo:'', mensual:0, anual:0});
+      }
+      if (typeof refreshServiciosSelect === 'function') await refreshServiciosSelect();
+      // still empty? add a temp option
+      if(sel.options.length===0){
+        const o=document.createElement('option'); o.value='SIN ASIGNAR'; o.textContent='SIN ASIGNAR'; sel.appendChild(o);
+      }
+    }
+  }catch(e){ console.warn('ensureOneServiceOption', e); }
+}
+
   const DEFAULT_SERVICES=[{id:1,nombre:'CANVA'},{id:2,nombre:'NETFLIX'},{id:3,nombre:'SPOTIFY'}];
   const $=(q)=>document.querySelector(q), $$=(q)=>[...document.querySelectorAll(q)];
 
-  $$('#tabs button').forEach(b=>b.addEventListener('click',()=>{$$('#tabs button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); const t=b.dataset.tab; $$('main section').forEach(s=>s.style.display='none'); $('#'+t).style.display='block'; if(t==='movimientos') renderMovimientos();}));
+  $$('#tabs button').forEach(b=>b.addEventListener('click',()=>{
+  $$('#tabs button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  const tab=b.dataset.tab;
+  $$('main section').forEach(s=>s.classList.remove('active'));
+  const sec = document.getElementById(tab);
+  if(sec) sec.classList.add('active');
+  if(tab==='calendario' && typeof renderCalendario==='function') renderCalendario();
+  if(tab==='movimientos' && typeof renderMovimientos==='function') renderMovimientos();
+  if(tab==='clientes' && typeof renderClientes==='function') renderClientes();
+}));
 
   async function ensureDefaultServices(){const cur=await allServicios(); if(cur.length===0){for(const s of DEFAULT_SERVICES) await saveServicio(s);}}
   async function refreshServiciosSelect(){const list=await allServicios(); const sel=$('#servicio'); sel.innerHTML=''; list.forEach(s=>{const o=document.createElement('option'); o.value=s.nombre; o.textContent=s.nombre; sel.appendChild(o);});}
@@ -38,6 +67,7 @@
   function loadClienteToForm(c){ $('#clienteId').value=c.id||''; $('#nombre').value=c.nombre||''; $('#apellido').value=c.apellido||''; $('#email').value=c.email||''; $('#servicio').value=c.servicio||''; $('#plan').value=c.plan||'mensual'; $('#precio').value=c.precio||0; $('#estado').value=c.estado||'activo'; $('#usuarioPlataforma').value=c.usuarioPlataforma||''; $('#contrasenaVisible').value=c.passPlain||''; $('#notas').value=c.notas||''; $('#inicio').value=fmtDate(c.inicio)||todayStr(); $('#fin').value=fmtDate(c.fin)||todayStr(); }
 
   document.getElementById('formCliente').addEventListener('submit', async (e)=>{
+    await ensureOneServiceOption();
     e.preventDefault();
     // Defaults
     if(!$('#servicio').value){const sel=$('#servicio'); if(sel && sel.options.length>0) sel.value=sel.options[0].value;}
@@ -62,7 +92,13 @@
       fin:$('#fin').value||todayStr()
     };
     const isNew=!obj.id;
-    try{ const rid=await saveCliente(obj); await addMov({tipo:isNew?'ALTA':'EDICIÓN',cliente:(obj.nombre+' '+obj.apellido).trim(),servicio:obj.servicio,plan:obj.plan,monto:obj.precio, notas:isNew?'Alta de cliente':'Edición de datos'}); $('#clienteId').value=rid||obj.id||''; await renderClientes(); alert('✔ Registro guardado'); }catch(e){ console.error(e); alert('❌ No se pudo guardar'); }
+    try{
+      const rid=await saveCliente(obj);
+      try { await addMov({tipo:isNew?'ALTA':'EDICIÓN',cliente:(obj.nombre+' '+obj.apellido).trim(),servicio:obj.servicio,plan:obj.plan,monto:obj.precio, notas:isNew?'Alta de cliente':'Edición de datos'});} catch(mErr){ console.warn('mov add warn', mErr); }
+      document.getElementById('clienteId').value=rid||obj.id||'';
+      if (typeof renderClientes==='function') await renderClientes();
+      alert('✔ Registro guardado');
+    }catch(err){ console.error('saveCliente error', err); alert('❌ No se pudo guardar. Probá recargar la página.'); }
   });
 
   document.getElementById('btnNuevo').addEventListener('click',()=>{ $('#formCliente').reset(); $('#clienteId').value=''; $('#inicio').value=todayStr(); $('#fin').value=todayStr(); });
@@ -75,5 +111,33 @@
 
   async function renderMovimientos(){ const tb=document.querySelector('#tablaMov tbody'); const data=await allMov(); tb.innerHTML=''; data.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)); for(const m of data){ const tr=document.createElement('tr'); tr.innerHTML=`<td>${m.fecha}</td><td>${m.tipo}</td><td>${m.cliente}</td><td>${m.servicio}</td><td>${m.plan}</td><td>${m.monto}</td><td>${m.notas||''}</td>`; tb.appendChild(tr);} }
 
-  (async function init(){ await openDB(); await ensureDefaultServices(); await refreshServiciosSelect(); document.querySelectorAll('main section').forEach((s,i)=>s.style.display = i===0? 'block':'none'); document.querySelector('#clientes').style.display='block'; document.querySelector('#inicio').value=todayStr(); document.querySelector('#fin').value=todayStr(); await renderClientes(); await renderMovimientos(); })();
+  
+(async function init(){
+  try{
+    await openDB();
+  }catch(e){
+    console.error('DB open error', e);
+    alert('Error inicializando base de datos. Intenta recargar la página.');
+    return;
+  }
+  // Semillas y selects
+  try{
+    if (typeof ensureDefaultServices === 'function') await ensureDefaultServices();
+    if (document.getElementById('inicio')) document.getElementById('inicio').value = (typeof todayStr==='function')? todayStr() : '';
+    if (document.getElementById('fin')) document.getElementById('fin').value = (typeof todayStr==='function')? todayStr() : '';
+    if (typeof refreshServiciosSelect === 'function') await refreshServiciosSelect();
+  }catch(e){ console.warn('Init seeds warning', e); }
+  try{
+    if (typeof populateFiltroServicios === 'function') await populateFiltroServicios();
+    if (typeof populateMovServicios === 'function') await populateMovServicios();
+    if (typeof bindClienteFilters === 'function') bindClienteFilters();
+    if (typeof bindMovFilters === 'function') bindMovFilters();
+  }catch(e){ console.warn('Bind filters warning', e); }
+  try{
+    if (typeof renderClientes === 'function') await renderClientes();
+    if (typeof renderMovimientos === 'function') await renderMovimientos();
+    if (typeof renderCalendario === 'function') renderCalendario();
+  }catch(e){ console.warn('First render warning', e); }
+})();
+
 })();

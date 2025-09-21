@@ -2,12 +2,12 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Control de Ventas de Plataformas</title>
 <link rel="manifest" href="manifest.webmanifest">
-<style>body{background:#0b0d10;color:#e6edf3;font-family:system-ui;margin:0} .card{background:#161b22;border:1px solid #263040;border-radius:16px;padding:14px;margin:12px} .btn{padding:8px 12px;border-radius:10px;border:1px solid #263040;background:#0f1621;color:#e6edf3;cursor:pointer} .grid{display:grid;gap:12px} @media(min-width:900px){.grid-2{grid-template-columns:1fr 1fr}} table{width:100%;border-collapse:collapse} th,td{padding:8px;border-bottom:1px solid #263040} nav button{margin:6px} .chip{border:1px solid #263040;padding:2px 8px;border-radius:999px;font-size:.8rem}</style>
+<style>html,body{height:100%} body{overflow-x:hidden} .wrap{max-width:1100px;margin:0 auto;padding:0 12px} .full{width:100%} body{background:#0b0d10;color:#e6edf3;font-family:system-ui;margin:0} .card{background:#161b22;border:1px solid #263040;border-radius:16px;padding:14px;margin:12px} .btn{padding:8px 12px;border-radius:10px;border:1px solid #263040;background:#0f1621;color:#e6edf3;cursor:pointer} .grid{display:grid;gap:12px} @media(min-width:900px){.grid-2{grid-template-columns:1fr 1fr}} table{width:100%;border-collapse:collapse} th,td{padding:8px;border-bottom:1px solid #263040} nav button{margin:6px} .chip{border:1px solid #263040;padding:2px 8px;border-radius:999px;font-size:.8rem} section{display:none} section.active{display:block} </style>
 </head><body>
 <header class="card">
   <h1>📦 Control de Ventas</h1>
   <nav id="tabs">
-    <button data-tab="clientes" class="btn">Clientes</button>
+    <button data-tab="clientes" class="btn active">Clientes</button>
     <button data-tab="filtros" class="btn">Filtros</button>
     <button data-tab="calendario" class="btn">Calendario</button>
     <button data-tab="movimientos" class="btn">Movimientos</button>
@@ -15,8 +15,8 @@
     <button data-tab="respaldo" class="btn">Respaldo</button>
   </nav>
 </header>
-<main>
-<section id="clientes" class="card">
+<main class="wrap">
+<section id="clientes" class="card" class="active">
   <h2>Registrar / Editar cliente</h2>
   <form id="formCliente">
     <input type="hidden" id="clienteId"/>
