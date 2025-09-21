@@ -1,74 +1,135 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control de Cuentas</title>
-  <link rel="manifest" href="manifest.webmanifest">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CONTROL CUENTAS</title>
+  <meta name="theme-color" content="#0b0d10">
+  <link rel="manifest" href="./manifest.webmanifest">
   <style>
-    body { font-family: Arial, sans-serif; background:#0b0d10; color:#e6edf3; margin:0; overflow-x:hidden;}
-    header { background:#161b22; padding:10px; }
-    nav button { margin:2px; padding:6px 12px; border:0; border-radius:6px; cursor:pointer; background:#21262d; color:#e6edf3; }
-    nav button.active { background:#30363d; }
-    main { max-width:1100px; margin:auto; padding:10px; }
-    section { display:none; }
-    section.active { display:block; }
-    .card { background:#161b22; padding:10px; border-radius:8px; margin:10px 0; }
-    table { width:100%; border-collapse:collapse; }
-    th,td { padding:6px; border-bottom:1px solid #30363d; }
-    .btn { background:#238636; color:white; border:0; border-radius:6px; padding:6px 10px; cursor:pointer; margin:2px;}
-    input, select, textarea { width:100%; margin:3px 0; padding:4px; border-radius:4px; border:1px solid #30363d; background:#0d1117; color:#e6edf3; }
+    :root{--bg:#0b0d10;--card:#161b22;--b:#263040;--t:#e6edf3;--mut:#9aa7b2}
+    *{box-sizing:border-box} html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--t);font-family:system-ui,Segoe UI,Roboto,Arial;overflow-x:hidden}
+    header{background:#0f1420;border-bottom:1px solid var(--b);position:sticky;top:0;z-index:10}
+    .wrap{max-width:1100px;margin:0 auto;padding:12px}
+    nav{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+    nav button{background:#0f1621;border:1px solid var(--b);color:var(--t);border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:600}
+    nav button.active{outline:2px solid #33b1ff}
+    main{padding:14px} .card{background:var(--card);border:1px solid var(--b);border-radius:14px;padding:12px;margin:10px 0}
+    section{display:none} section.active{display:block}
+    label{display:block;color:var(--mut);font-size:.9rem;margin:6px 0 3px}
+    input,select,textarea{width:100%;background:#0e1318;color:var(--t);border:1px solid var(--b);border-radius:10px;padding:8px}
+    table{width:100%;border-collapse:collapse} th,td{padding:8px;border-bottom:1px solid var(--b);text-align:left}
+    .btn{background:#0f1621;color:var(--t);border:1px solid var(--b);border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:600}
+    .btn.primary{background:#33b1ff;color:#001018;border-color:#2aa3ee}
+    .grid{display:grid;gap:10px} @media(min-width:900px){.grid-2{grid-template-columns:1fr 1fr}}
   </style>
 </head>
 <body>
 <header>
-  <h1>📊 Control de Cuentas</h1>
-  <nav id="tabs">
-    <button data-tab="clientes" class="active">Clientes</button>
-    <button data-tab="calendario">Calendario</button>
-    <button data-tab="movimientos">Movimientos</button>
-    <button data-tab="servicios">Servicios</button>
-    <button data-tab="respaldo">Respaldo</button>
-  </nav>
+  <div class="wrap">
+    <h1>📦 CONTROL CUENTAS</h1>
+    <nav id="tabs">
+      <button data-tab="clientes" class="active">Clientes</button>
+      <button data-tab="calendario">Calendario</button>
+      <button data-tab="movimientos">Movimientos</button>
+      <button data-tab="servicios">Servicios</button>
+      <button data-tab="respaldo">Respaldo</button>
+    </nav>
+  </div>
 </header>
-<main>
+
+<main class="wrap">
   <section id="clientes" class="active">
-    <div class="card">
-      <h2>Registrar / Editar cliente</h2>
-      <form id="formCliente">
-        <input type="hidden" id="clienteId">
-        <label>Nombre</label><input id="nombre">
-        <label>Apellido</label><input id="apellido">
-        <label>Email</label><input id="email">
-        <label>Servicio</label><select id="servicio"></select>
-        <label>Plan</label><select id="plan"><option value="mensual">Mensual</option><option value="anual">Anual</option></select>
-        <label>Precio (ARS)</label><input id="precio" type="number" step="0.01">
-        <label>Estado</label><select id="estado"><option value="activo">Activo</option><option value="suspendido">Suspendido</option></select>
-        <label>Usuario</label><input id="usuarioPlataforma">
-        <label>Contraseña visible</label><input id="contrasenaVisible">
-        <button class="btn" type="button" id="copyUsuario">Copiar usuario</button>
-        <button class="btn" type="button" id="copyPassVisible">Copiar contraseña</button>
-        <label>Notas internas</label><textarea id="notas"></textarea>
-        <label>Inicio</label><input id="inicio" type="date">
-        <label>Fin</label><input id="fin" type="date">
-        <div>
-          <button class="btn" type="submit">Guardar</button>
-          <button class="btn" type="button" id="btnNuevo">Nuevo</button>
-          <button class="btn" type="button" id="btnRenovar">Renovar</button>
-          <button class="btn" type="button" id="btnEliminar">Eliminar</button>
+    <div class="grid grid-2">
+      <div class="card">
+        <h2>Registrar / Editar cliente</h2>
+        <form id="formCliente">
+          <input type="hidden" id="clienteId">
+          <div class="grid grid-2">
+            <div><label>Nombre</label><input id="nombre"></div>
+            <div><label>Apellido</label><input id="apellido"></div>
+            <div><label>Email</label><input id="email" type="email"></div>
+            <div><label>Servicio</label><select id="servicio"></select></div>
+            <div><label>Plan</label><select id="plan"><option value="mensual">Mensual</option><option value="anual">Anual</option></select></div>
+            <div><label>Precio (ARS)</label><input id="precio" type="number" step="0.01" min="0"></div>
+            <div><label>Estado</label><select id="estado"><option value="activo">Activo</option><option value="suspendido">Suspendido</option></select></div>
+            <div><label>Usuario</label><input id="usuarioPlataforma"></div>
+            <div><label>Contraseña visible</label><input id="contrasenaVisible"></div>
+          </div>
+          <div><label>Notas internas</label><textarea id="notas" rows="2"></textarea></div>
+          <div class="grid grid-2">
+            <div><label>Inicio</label><input id="inicio" type="date"></div>
+            <div><label>Fin</label><input id="fin" type="date"></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+            <button class="btn primary" type="submit">Guardar</button>
+            <button class="btn" type="button" id="btnNuevo">Nuevo</button>
+            <button class="btn" type="button" id="btnRenovar">Renovar</button>
+            <button class="btn" type="button" id="btnEliminar">Eliminar</button>
+            <button class="btn" type="button" id="copyUsuario">Copiar usuario</button>
+            <button class="btn" type="button" id="copyPassVisible">Copiar contraseña</button>
+          </div>
+        </form>
+      </div>
+      <div class="card">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <strong>Exportar</strong>
+          <button class="btn" id="exportCSV">CSV</button>
+          <button class="btn" id="exportXLS">Excel (.xls)</button>
+          <button class="btn" id="exportPDF">PDF</button>
         </div>
-      </form>
-    </div>
-    <div class="card">
-      <h2>Clientes</h2>
-      <table id="tablaClientes"><thead><tr><th>Cliente</th><th>Email</th><th>Servicio</th><th>Plan</th><th>Inicio-Fin</th><th>Días</th><th>Precio</th><th>Estado</th></tr></thead><tbody></tbody></table>
+        <table id="tablaClientes">
+          <thead><tr><th>Cliente</th><th>Email</th><th>Servicio/Plan</th><th>Inicio → Fin</th><th>Días</th><th>Precio</th><th>Estado</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
   </section>
-  <section id="calendario"><div id="gridCal" class="card"></div></section>
-  <section id="movimientos"><div class="card"><h2>Movimientos</h2><table id="tablaMov"><thead><tr><th>Fecha</th><th>Tipo</th><th>Cliente</th><th>Servicio</th><th>Plan</th><th>Monto</th><th>Notas</th></tr></thead><tbody></tbody></table></div></section>
-  <section id="servicios"><div class="card"><h2>Servicios</h2><form id="formServicio"><input type="hidden" id="servicioId"><input id="svcNombre" placeholder="Nombre"><button class="btn" type="submit">Guardar</button></form><table id="tablaSvc"><thead><tr><th>Nombre</th></tr></thead><tbody></tbody></table></div></section>
-  <section id="respaldo"><div class="card"><h2>Respaldo</h2><button class="btn" id="btnBackupJSON">Exportar JSON</button><input id="fileRestore" type="file"><button class="btn" id="btnImportar">Importar</button><button class="btn" id="btnClearDB">Reparar DB</button></div></section>
+
+  <section id="calendario">
+    <div class="card">
+      <h2>Calendario</h2>
+      <div id="gridCal"></div>
+    </div>
+  </section>
+
+  <section id="movimientos">
+    <div class="card">
+      <h2>Movimientos</h2>
+      <table id="tablaMov"><thead><tr><th>Fecha</th><th>Tipo</th><th>Cliente</th><th>Servicio</th><th>Plan</th><th>Monto</th><th>Notas</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <section id="servicios">
+    <div class="card">
+      <h2>Servicios</h2>
+      <form id="formServicio" style="display:flex;gap:8px;flex-wrap:wrap">
+        <input type="hidden" id="servicioId">
+        <input id="svcNombre" placeholder="Nombre del servicio (ej. NETFLIX)">
+        <input id="svcGrupo" placeholder="Grupo (ej. Streaming)">
+        <input id="svcMensual" type="number" step="0.01" placeholder="Mensual ARS">
+        <input id="svcAnual" type="number" step="0.01" placeholder="Anual ARS">
+        <button class="btn primary" type="submit">Guardar servicio</button>
+        <button class="btn" id="svcNuevo" type="button">Nuevo</button>
+      </form>
+      <table id="tablaSvc"><thead><tr><th>Servicio</th><th>Mensual</th><th>Anual</th><th>Grupo</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <section id="respaldo">
+    <div class="card">
+      <h2>Respaldo</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="btnBackupJSON">Exportar respaldo (.json)</button>
+        <input type="file" id="fileRestore" accept="application/json">
+        <button class="btn" id="btnImportar">Importar respaldo</button>
+        <button class="btn" id="btnClearDB">Reparar datos (borrar base)</button>
+      </div>
+    </div>
+  </section>
 </main>
-<script src="app.js"></script>
+
+<script src="./app.js"></script>
 </body>
 </html>

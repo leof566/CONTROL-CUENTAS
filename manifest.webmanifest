@@ -1,1 +1,9 @@
-{"name": "Control de Cuentas", "short_name": "Cuentas", "start_url": "./index.html", "display": "standalone", "background_color": "#0b0d10", "theme_color": "#0b0d10", "icons": []}
+{
+  "name": "CONTROL CUENTAS",
+  "short_name": "Cuentas",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b0d10",
+  "theme_color": "#0b0d10",
+  "icons": []
+}
