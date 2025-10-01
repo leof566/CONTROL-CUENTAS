@@ -1,68 +1,554 @@
 (function(){
 'use strict';
-const fmtDate=(d)=>{if(!d)return'';const x=(d instanceof Date)?d:new Date(d);const y=x.getFullYear(),m=String(x.getMonth()+1).padStart(2,'0'),da=String(x.getDate()).padStart(2,'0');return `${y}-${m}-${da}`;};
-const todayStr=()=>fmtDate(new Date());
-const addMonths=(d,m)=>{const x=new Date(d||new Date());const day=x.getDate();x.setMonth(x.getMonth()+m);if(x.getDate()!==day)x.setDate(0);return x;};
-const addYears=(d,y)=>{const x=new Date(d||new Date());x.setFullYear(x.getFullYear()+y);return x;};
-const daysBetween=(a,b)=>Math.floor((new Date(b)-new Date(a))/(1000*60*60*24));
-const calcEstado=(fin)=>{const h=todayStr();if(fmtDate(fin)<h)return{k:'vencido',label:'Vencido'};if(fmtDate(fin)===h)return{k:'hoy',label:'Vence hoy'};return{k:'activo',label:'Activo'}};
-const $=(q)=>document.querySelector(q), $$=(q)=>[...document.querySelectorAll(q)];
 
+/* ============================
+   Utilidades
+=============================*/
+const fmtDate = (d) => {
+  if (!d) return '';
+  const x = (d instanceof Date) ? d : new Date(d);
+  const y = x.getFullYear();
+  const m = String(x.getMonth()+1).padStart(2,'0');
+  const da = String(x.getDate()).padStart(2,'0');
+  return `${y}-${m}-${da}`;
+};
+const todayStr = () => fmtDate(new Date());
+const addMonths = (d, m) => {
+  const x = new Date(d || new Date());
+  const day = x.getDate();
+  x.setMonth(x.getMonth() + m);
+  // Si el mes siguiente no tiene el mismo día, va al último día válido
+  if (x.getDate() !== day) x.setDate(0);
+  return x;
+};
+const addYears = (d, y) => {
+  const x = new Date(d || new Date());
+  x.setFullYear(x.getFullYear() + y);
+  return x;
+};
+const daysBetween = (a,b) => Math.floor((new Date(b) - new Date(a)) / (1000*60*60*24));
+const calcEstado = (fin) => {
+  const h = todayStr();
+  const f = fmtDate(fin);
+  if (f < h) return { k:'vencido', label:'Vencido' };
+  if (f === h) return { k:'hoy', label:'Vence hoy' };
+  return { k:'activo', label:'Activo' };
+};
+const $  = (q) => document.querySelector(q);
+const $$ = (q) => [...document.querySelectorAll(q)];
+
+/* ============================
+   IndexedDB
+=============================*/
 let db;
-function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open('control-cuentas',1);r.onupgradeneeded=e=>{const d=e.target.result;d.createObjectStore('clientes',{keyPath:'id',autoIncrement:true});d.createObjectStore('movimientos',{keyPath:'id',autoIncrement:true});d.createObjectStore('servicios',{keyPath:'id',autoIncrement:true});};r.onsuccess=()=>{db=r.result;res(db)};r.onerror=()=>rej(r.error);});}
-const tx=(s,m='readonly')=>db.transaction(s,m).objectStore(s);
-const saveCliente=(o)=>new Promise((r,j)=>{const q=tx('clientes','readwrite').put(o);q.onsuccess=()=>r(q.result);q.onerror=()=>j(q.error);});
-const delCliente=(id)=>new Promise((r,j)=>{const q=tx('clientes','readwrite').delete(id);q.onsuccess=()=>r(true);q.onerror=()=>j(q.error);});
-const allClientes=()=>new Promise((r,j)=>{const q=tx('clientes').getAll();q.onsuccess=()=>r(q.result||[]);q.onerror=()=>j(q.error);});
-const addMov=(m)=>{m.fecha=m.fecha||new Date().toISOString();return new Promise((r,j)=>{const q=tx('movimientos','readwrite').add(m);q.onsuccess=()=>r(q.result);q.onerror=()=>j(q.error);});};
-const allMov=()=>new Promise((r,j)=>{const q=tx('movimientos').getAll();q.onsuccess=()=>r(q.result||[]);q.onerror=()=>j(q.error);});
-const saveServicio=(s)=>new Promise((r,j)=>{const q=tx('servicios','readwrite').put(s);q.onsuccess=()=>r(q.result);q.onerror=()=>j(q.error);});
-const allServicios=()=>new Promise((r,j)=>{const q=tx('servicios').getAll();q.onsuccess=()=>r(q.result||[]);q.onerror=()=>j(q.error);});
+function openDB(){
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('control-cuentas', 2);
+    r.onupgradeneeded = (e) => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('clientes'))   d.createObjectStore('clientes',   { keyPath:'id', autoIncrement:true });
+      if (!d.objectStoreNames.contains('movimientos'))d.createObjectStore('movimientos',{ keyPath:'id', autoIncrement:true });
+      if (!d.objectStoreNames.contains('servicios'))  d.createObjectStore('servicios',  { keyPath:'id', autoIncrement:true });
+      if (!d.objectStoreNames.contains('settings'))   d.createObjectStore('settings'); // reservado
+    };
+    r.onsuccess = () => { db = r.result; res(db); };
+    r.onerror   = () => rej(r.error);
+  });
+}
+const tx = (store, mode='readonly') => db.transaction(store, mode).objectStore(store);
 
-$$('#tabs button').forEach(b=>b.addEventListener('click',()=>{$$('#tabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const t=b.dataset.tab;$$('main section').forEach(s=>s.classList.remove('active'));document.getElementById(t).classList.add('active');if(t==='clientes')renderClientes();if(t==='movimientos')renderMovimientos();}));
+const saveCliente = (o) => new Promise((r,j) => {
+  const q = tx('clientes','readwrite').put(o);
+  q.onsuccess = () => r(q.result);
+  q.onerror   = () => j(q.error);
+});
+const delCliente   = (id) => new Promise((r,j)=>{ const q=tx('clientes','readwrite').delete(id); q.onsuccess=()=>r(true); q.onerror=()=>j(q.error); });
+const allClientes  = () => new Promise((r,j)=>{ const q=tx('clientes').getAll(); q.onsuccess=()=>r(q.result||[]); q.onerror=()=>j(q.error); });
 
-const DEFAULT_SERVICES=['CANVA','CAPCUT','NETFLIX','YOUTUBE PREMIUM','DISNEY','MAX','CRUNCHYROLL','PARAMOUNT','APPLE TV','VIX','PRIME','CHATGPT','SPOTIFY'];
-async function ensureDefaultServices(){const list=await allServicios();if(list.length===0){for(const n of DEFAULT_SERVICES){await saveServicio({nombre:n,grupo:'',mensual:0,anual:0});}}}
-async function refreshServiciosSelect(){const list=await allServicios();const sel=$('#servicio');if(!sel)return;const prevVal=sel.value;sel.innerHTML='';list.sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||'')).forEach(s=>{const o=document.createElement('option');o.value=s.nombre;o.textContent=s.nombre;sel.appendChild(o);});if(sel.options.length===0){const o=document.createElement('option');o.value='SIN ASIGNAR';o.textContent='SIN ASIGNAR';sel.appendChild(o);} if(prevVal && [...sel.options].some(op=>op.value===prevVal)){ sel.value=prevVal; }}
+const addMov = (m) => {
+  m.fecha = m.fecha || new Date().toISOString();
+  return new Promise((r,j) => {
+    const q = tx('movimientos','readwrite').add(m);
+    q.onsuccess = () => r(q.result);
+    q.onerror   = () => j(q.error);
+  });
+};
+const allMov = () => new Promise((r,j)=>{ const q=tx('movimientos').getAll(); q.onsuccess=()=>r(q.result||[]); q.onerror=()=>j(q.error); });
 
-async function renderClientes(){const data=await allClientes();const tb=$('#tablaClientes tbody');if(!tb)return;tb.innerHTML='';const hoy=todayStr();data.sort((a,b)=>new Date(a.fin)-new Date(b.fin));for(const c of data){const est=calcEstado(c.fin);const dias=daysBetween(new Date(),new Date(c.fin));const diasStr=(fmtDate(c.fin)===hoy)?'0':(dias>0?dias:`-${Math.abs(dias)}`);const tr=document.createElement('tr');tr.innerHTML=`<td><div class="c-name">${c.nombre||''} ${c.apellido||''}</div><div class="c-sub">${c.email||''}</div>${c.usuarioPlataforma?`<div class="c-sub">${c.usuarioPlataforma}</div>`:''}${c.notas?`<div class="c-sub">📝 ${c.notas}</div>`:''}</td><td>${c.servicio||''}<div class="c-sub">${c.plan||''}</div></td><td class="nowrap"><div>${fmtDate(c.inicio)}</div><div>→ ${fmtDate(c.fin)}</div><div class="c-sub">Días: ${diasStr}</div></td><td class="num">$ ${Number(c.precio||0).toFixed(2)}</td><td><span class="status ${est.k}">${est.label}</span></td>`;tr.addEventListener('click',()=>loadClienteToForm(c));tb.appendChild(tr);}}
-function loadClienteToForm(c){$('#clienteId').value=(c&&typeof c.id==='number'&&c.id>0)?String(c.id):'';$('#nombre').value=c?.nombre||'';$('#apellido').value=c?.apellido||'';$('#email').value=c?.email||'';const sel=document.getElementById('servicio');const val=c?.servicio||'SIN ASIGNAR';if(sel && ![...sel.options].some(op=>op.value===val)){const o=document.createElement('option');o.value=val;o.textContent=val;sel.appendChild(o);}$('#servicio').value=val;$('#plan').value=c?.plan||'mensual';$('#precio').value=c?.precio||0;$('#estado').value=c?.estado||'activo';$('#usuarioPlataforma').value=c?.usuarioPlataforma||'';$('#contrasenaVisible').value=c?.passPlain||'';$('#notas').value=c?.notas||'';$('#inicio').value=fmtDate(c?.inicio)||todayStr();$('#fin').value=fmtDate(c?.fin)||todayStr();}
+const saveServicio = (s) => new Promise((r,j)=>{ const q=tx('servicios','readwrite').put(s); q.onsuccess=()=>r(q.result); q.onerror=()=>j(q.error); });
+const allServicios = () => new Promise((r,j)=>{ const q=tx('servicios').getAll(); q.onsuccess=()=>r(q.result||[]); q.onerror=()=>j(q.error); });
 
-if($('#formCliente'))$('#formCliente').addEventListener('submit',async e=>{e.preventDefault();await ensureDefaultServices();/* NO refrescar select aquí para NO perder selección */const rawId=($('#clienteId').value||'').trim();const parsedId=parseInt(rawId,10);const hasValidId=Number.isFinite(parsedId)&&parsedId>0;const servicioSel=$('#servicio').value||'SIN ASIGNAR';const planSel=$('#plan').value||'mensual';const estadoSel=$('#estado').value||'activo';const precioNum=Number($('#precio').value||0);const inicioVal=$('#inicio').value||todayStr();const finVal=$('#fin').value||todayStr();const obj={nombre:($('#nombre').value||'').trim(),apellido:($('#apellido').value||'').trim(),email:($('#email').value||'').trim(),servicio:servicioSel,plan:planSel,precio:Number.isFinite(precioNum)?precioNum:0,estado:estadoSel,usuarioPlataforma:($('#usuarioPlataforma').value||'').trim(),passPlain:($('#contrasenaVisible').value||'').trim(),notas:($('#notas').value||'').trim(),inicio:inicioVal,fin:finVal};if(hasValidId)obj.id=parsedId;const isNew=!hasValidId;try{const rid=await saveCliente(obj);try{await addMov({tipo:isNew?'ALTA':'EDICIÓN',cliente:(obj.nombre+' '+obj.apellido).trim(),servicio:obj.servicio,plan:obj.plan,monto:obj.precio,notas:isNew?'Alta de cliente':'Edición de datos'});}catch{}$('#clienteId').value=(hasValidId?String(parsedId):String(rid));await renderClientes();
-    alert('✔ Registro guardado');
-    // Limpiar para siguiente alta
-    const f=document.getElementById('formCliente');
-    if(f){
+/* ============================
+   Persistencia (evitar borrado)
+=============================*/
+async function ensurePersistentStorage(){
+  if (navigator.storage && navigator.storage.persist) {
+    try { await navigator.storage.persist(); } catch(e) {}
+  }
+}
+
+/* ============================
+   Respaldo automático (opcional)
+   Requiere Chrome/Edge escritorio
+=============================*/
+let backupHandle = null;
+
+async function writeBackupFile(){
+  if (!backupHandle) return;
+  try{
+    const datos = {
+      clientes:   await allClientes(),
+      servicios:  await allServicios(),
+      movimientos:await allMov()
+    };
+    const writable = await backupHandle.createWritable();
+    await writable.write(new Blob([JSON.stringify(datos,null,2)],{type:'application/json'}));
+    await writable.close();
+    console.log('Auto-backup actualizado');
+  }catch(err){
+    console.warn('Auto-backup falló:', err);
+  }
+}
+async function configureAutoBackup(){
+  if (!window.showSaveFilePicker) {
+    alert('Tu navegador no soporta respaldo automático. Usá "Exportar respaldo (.json)".');
+    return;
+  }
+  try{
+    backupHandle = await window.showSaveFilePicker({
+      suggestedName: 'respaldo_control_cuentas.json',
+      types: [{ description:'JSON', accept:{ 'application/json':['.json'] } }]
+    });
+    await writeBackupFile();
+    alert('Listo: cada cambio se guardará automáticamente en ese archivo.');
+  }catch(e){
+    // Usuario canceló
+  }
+}
+
+/* ============================
+   Tabs
+=============================*/
+$$('#tabs button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    $$('#tabs button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    const t = b.dataset.tab;
+    $$('main section').forEach(s=>s.classList.remove('active'));
+    document.getElementById(t).classList.add('active');
+    if (t==='clientes')   renderClientes();
+    if (t==='movimientos')renderMovimientos();
+    if (t==='calendario') renderCalendario();
+  });
+});
+
+/* ============================
+   Servicios
+=============================*/
+const DEFAULT_SERVICES = [
+  'CANVA','CAPCUT','NETFLIX','YOUTUBE PREMIUM','DISNEY','MAX','CRUNCHYROLL',
+  'PARAMOUNT','APPLE TV','VIX','PRIME','CHATGPT','SPOTIFY'
+];
+
+async function ensureDefaultServices(){
+  const list = await allServicios();
+  if (list.length === 0) {
+    for (const n of DEFAULT_SERVICES){
+      await saveServicio({ nombre:n, grupo:'', mensual:0, anual:0 });
+    }
+  }
+}
+
+async function refreshServiciosSelect(){
+  const list = await allServicios();
+  const sel = $('#servicio');
+  if (!sel) return;
+  const prevVal = sel.value;
+  sel.innerHTML = '';
+  list.sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''))
+      .forEach(s=>{
+        const o = document.createElement('option');
+        o.value = s.nombre;
+        o.textContent = s.nombre;
+        sel.appendChild(o);
+      });
+  if (sel.options.length===0){
+    const o=document.createElement('option');
+    o.value='SIN ASIGNAR'; o.textContent='SIN ASIGNAR';
+    sel.appendChild(o);
+  }
+  if (prevVal && [...sel.options].some(op=>op.value===prevVal)) {
+    sel.value = prevVal;
+  }
+}
+
+/* ============================
+   Listado de Clientes (tabla)
+=============================*/
+async function renderClientes(){
+  const data = await allClientes();
+  const tb = $('#tablaClientes tbody');
+  if (!tb) return;
+  tb.innerHTML = '';
+
+  const hoy = todayStr();
+  // Ordenar por fecha de fin (más próximo primero)
+  data.sort((a,b)=> new Date(a.fin) - new Date(b.fin));
+
+  for (const c of data){
+    const est  = calcEstado(c.fin);
+    const dias = daysBetween(new Date(), new Date(c.fin));
+    const diasStr = (fmtDate(c.fin)===hoy)?'0':(dias>0?dias:(`-${Math.abs(dias)}`));
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <div class="c-name">${c.nombre||''} ${c.apellido||''}</div>
+        <div class="c-sub">${c.email||''}</div>
+        ${c.usuarioPlataforma?`<div class="c-sub mono">${c.usuarioPlataforma}</div>`:''}
+        ${c.notas?`<div class="c-sub">📝 ${c.notas}</div>`:''}
+      </td>
+      <td>${c.servicio||''}<div class="c-sub">${c.plan||''}</div></td>
+      <td class="nowrap">
+        <div>${fmtDate(c.inicio)}</div>
+        <div>→ ${fmtDate(c.fin)}</div>
+        <div class="c-sub">Días: ${diasStr}</div>
+      </td>
+      <td class="num">$ ${Number(c.precio||0).toFixed(2)}</td>
+      <td><span class="status ${est.k}">${est.label}</span></td>
+    `;
+    tr.addEventListener('click',()=>loadClienteToForm(c));
+    tb.appendChild(tr);
+  }
+}
+
+function loadClienteToForm(c){
+  $('#clienteId').value        = (c && typeof c.id==='number' && c.id>0) ? String(c.id) : '';
+  $('#nombre').value           = c?.nombre || '';
+  $('#apellido').value         = c?.apellido || '';
+  $('#email').value            = c?.email || '';
+  const sel = $('#servicio');
+  const val = c?.servicio || 'SIN ASIGNAR';
+  if (sel && ![...sel.options].some(op=>op.value===val)){
+    const o = document.createElement('option');
+    o.value = val; o.textContent = val;
+    sel.appendChild(o);
+  }
+  $('#servicio').value         = val;
+  $('#plan').value             = c?.plan || 'mensual';
+  $('#precio').value           = c?.precio || 0;
+  $('#estado').value           = c?.estado || 'activo';
+  $('#usuarioPlataforma').value= c?.usuarioPlataforma || '';
+  $('#contrasenaVisible').value= c?.passPlain || '';
+  $('#notas').value            = c?.notas || '';
+  $('#inicio').value           = fmtDate(c?.inicio) || todayStr();
+  $('#fin').value              = fmtDate(c?.fin)    || fmtDate(addMonths(new Date(),1));
+}
+
+/* ============================
+   Formulario Clientes
+=============================*/
+(function attachFormHandlers(){
+  const f = $('#formCliente');
+  if (!f) return;
+
+  // Guardar con Enter (excepto textarea)
+  f.addEventListener('keydown',(e)=>{
+    if (e.key==='Enter' && e.target && e.target.tagName!=='TEXTAREA'){
+      e.preventDefault();
+      f.requestSubmit();
+    }
+  });
+
+  // Recalcular fin cuando cambia plan o inicio
+  function recalcFin(){
+    const ini  = $('#inicio').value || todayStr();
+    const plan = $('#plan').value   || 'mensual';
+    const fin  = (plan==='anual') ? addYears(ini,1) : addMonths(ini,1);
+    $('#fin').value = fmtDate(fin);
+  }
+  $('#plan')  ?.addEventListener('change', recalcFin);
+  $('#inicio')?.addEventListener('change', recalcFin);
+
+  // Guardar
+  f.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    await ensureDefaultServices(); // NO refrescar aquí el select para no perder la selección
+
+    const rawId     = ($('#clienteId').value||'').trim();
+    const parsedId  = parseInt(rawId,10);
+    const hasValidId= Number.isFinite(parsedId) && parsedId>0;
+
+    const obj = {
+      nombre:  ($('#nombre').value||'').trim(),
+      apellido:($('#apellido').value||'').trim(),
+      email:   ($('#email').value||'').trim(),
+      servicio:$('#servicio').value || 'SIN ASIGNAR',
+      plan:    $('#plan').value     || 'mensual',
+      precio:  Number($('#precio').value||0) || 0,
+      estado:  $('#estado').value   || 'activo',
+      usuarioPlataforma: ($('#usuarioPlataforma').value||'').trim(),
+      passPlain:         ($('#contrasenaVisible').value||'').trim(),
+      notas:   ($('#notas').value||'').trim(),
+      inicio:  $('#inicio').value   || todayStr(),
+      fin:     $('#fin').value      || fmtDate(addMonths(new Date(),1))
+    };
+    if (hasValidId) obj.id = parsedId; // IMPORTANTE: solo si es entero > 0
+
+    const isNew = !hasValidId;
+    try{
+      await saveCliente(obj);
+      await addMov({
+        tipo: isNew ? 'ALTA' : 'EDICIÓN',
+        cliente: (obj.nombre+' '+obj.apellido).trim(),
+        servicio: obj.servicio,
+        plan: obj.plan,
+        monto: obj.precio,
+        notas: isNew ? 'Alta de cliente' : 'Edición de datos'
+      });
+      await renderClientes();
+      await renderMovimientos();
+      await renderCalendario();
+      await writeBackupFile();
+
+      // Limpiar para siguiente alta
       f.reset();
-      document.getElementById('clienteId').value='';
-      document.getElementById('plan').value='mensual';
-      document.getElementById('estado').value='activo';
-      const hoy=todayStr();
-      document.getElementById('inicio').value=hoy;
-      document.getElementById('fin').value=fmtDate(addMonths(hoy,1));
-    }}catch(err){console.error('saveCliente error',err);alert('❌ No se pudo guardar: '+(err&&err.message?err.message:err));}});
+      $('#clienteId').value = '';
+      $('#plan').value = 'mensual';
+      $('#estado').value = 'activo';
+      const h = todayStr();
+      $('#inicio').value = h;
+      $('#fin').value = fmtDate(addMonths(h,1));
+    }catch(err){
+      console.error('saveCliente error', err);
+      alert('❌ No se pudo guardar: ' + (err?.message || err));
+    }
+  });
 
-if($('#btnNuevo'))$('#btnNuevo').addEventListener('click',()=>{$('#formCliente').reset();$('#clienteId').value='';$('#inicio').value=todayStr();$('#fin').value=todayStr();});
-if($('#btnEliminar'))$('#btnEliminar').addEventListener('click',async()=>{const rawId=($('#clienteId').value||'').trim();const id=parseInt(rawId,10);if(!Number.isFinite(id)||id<=0)return alert('Seleccioná un cliente');await delCliente(id);await addMov({tipo:'BAJA',cliente:'',servicio:'',plan:'',monto:0,notas:`Eliminado ID ${id}`});await renderClientes();alert('Eliminado');});
-if($('#btnRenovar'))$('#btnRenovar').addEventListener('click',async()=>{const id=parseInt(($('#clienteId').value||'').trim(),10);if(!Number.isFinite(id)||id<=0)return alert('Seleccioná un cliente');const data=await allClientes();const c=data.find(x=>x.id===id);if(!c)return;const base=new Date(c.fin||c.inicio||new Date());c.fin=fmtDate((c.plan==='anual')?addYears(base,1):addMonths(base,1));const np=prompt('Nuevo precio ARS (vacío = mantener):', String(c.precio??''));if(np!==null&&np.trim()!==''){const n=Number(np);if(!Number.isNaN(n))c.precio=n;}await saveCliente(c);await addMov({tipo:'RENOVACIÓN',cliente:c.nombre+' '+c.apellido,servicio:c.servicio,plan:c.plan,monto:c.precio,notas:`Nuevo fin: ${c.fin}`});await renderClientes();alert('Renovado');});
+  // Nuevo
+  $('#btnNuevo')?.addEventListener('click',()=>{
+    f.reset();
+    $('#clienteId').value = '';
+    $('#plan').value = 'mensual';
+    $('#estado').value = 'activo';
+    const h = todayStr();
+    $('#inicio').value = h;
+    $('#fin').value = fmtDate(addMonths(h,1));
+  });
 
-function exportCSV(rows, filename){if(!rows.length){alert('Sin datos');return;}const header=Object.keys(rows[0]).join(',');const body=rows.map(r=>Object.values(r).map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n');const blob=new Blob([header+'\n'+body],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();}
-function exportXLS(rows, filename){if(!rows.length){alert('Sin datos');return;}const esc=(s)=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');const keys=Object.keys(rows[0]);const cols=keys.map(k=>`<Cell><Data ss:Type="String">${esc(k)}</Data></Cell>`).join('');const xmlRows=rows.map(r=>{const cells=keys.map(k=>`<Cell><Data ss:Type="String">${esc(r[k]??'')}</Data></Cell>`).join('');return `<Row>${cells}</Row>`;}).join('');const xml=`<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Clientes"><Table>${cols}${xmlRows}</Table></Worksheet></Workbook>`;const blob=new Blob([xml],{type:'application/vnd.ms-excel'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();}
-function exportTableAsPDF(printHtml, filename){const w=window.open('','_blank');w.document.write(`<html><head><title>${filename}</title><style>body{font-family:Arial}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:6px;font-size:12px;text-align:left}th{background:#f3f3f3}</style></head><body>${printHtml}</body></html>`);w.document.close();w.focus();w.print();}
-if(document.getElementById('exportCSV'))document.getElementById('exportCSV').addEventListener('click',async()=>{const d=await allClientes();const rows=d.map(c=>({id:c.id,nombre:c.nombre,apellido:c.apellido,email:c.email,servicio:c.servicio,plan:c.plan,precio:c.precio,inicio:fmtDate(c.inicio),fin:fmtDate(c.fin),dias:daysBetween(new Date(),new Date(c.fin)),estado:calcEstado(c.fin).label,notas:c.notas||''}));exportCSV(rows,'clientes.csv');});
-if(document.getElementById('exportXLS'))document.getElementById('exportXLS').addEventListener('click',async()=>{const d=await allClientes();const rows=d.map(c=>({id:c.id,nombre:c.nombre,apellido:c.apellido,email:c.email,servicio:c.servicio,plan:c.plan,precio:c.precio,inicio:fmtDate(c.inicio),fin:fmtDate(c.fin),dias:daysBetween(new Date(),new Date(c.fin)),estado:calcEstado(c.fin).label,notas:c.notas||''}));exportXLS(rows,'clientes.xls');});
-if(document.getElementById('exportPDF'))document.getElementById('exportPDF').addEventListener('click',async()=>{const d=await allClientes();let html='<h1>Clientes</h1><table><thead><tr><th>ID</th><th>Cliente</th><th>Email</th><th>Servicio</th><th>Plan</th><th>Precio</th><th>Inicio</th><th>Fin</th><th>Días</th><th>Estado</th><th>Notas</th></tr></thead><tbody>';for(const c of d){html+=`<tr><td>${c.id}</td><td>${c.nombre||''} ${c.apellido||''}</td><td>${c.email||''}</td><td>${c.servicio||''}</td><td>${c.plan||''}</td><td>${c.precio||0}</td><td>${fmtDate(c.inicio)}</td><td>${fmtDate(c.fin)}</td><td>${daysBetween(new Date(),new Date(c.fin))}</td><td>${calcEstado(c.fin).label}</td><td>${(c.notas||'').replace(/</g,'&lt;')}</td></tr>`;}html+='</tbody></table>';exportTableAsPDF(html,'clientes.pdf');});
+  // Eliminar
+  $('#btnEliminar')?.addEventListener('click', async ()=>{
+    const rawId = ($('#clienteId').value||'').trim();
+    const id    = parseInt(rawId,10);
+    if (!Number.isFinite(id) || id<=0) return alert('Seleccioná un cliente');
 
-function copyVal(id){const el=document.getElementById(id);if(!el)return;el.select();el.setSelectionRange(0,99999);document.execCommand('copy');}
-if(document.getElementById('copyUsuario'))document.getElementById('copyUsuario').addEventListener('click',()=>copyVal('usuarioPlataforma'));
-if(document.getElementById('copyPassVisible'))document.getElementById('copyPassVisible').addEventListener('click',()=>copyVal('contrasenaVisible'));
+    await delCliente(id);
+    await addMov({ tipo:'BAJA', cliente:'', servicio:'', plan:'', monto:0, notas:`Eliminado ID ${id}` });
+    await renderClientes();
+    await renderMovimientos();
+    await renderCalendario();
+    await writeBackupFile();
+    alert('Eliminado');
+    $('#btnNuevo')?.click();
+  });
 
-if(document.getElementById('btnBackupJSON'))document.getElementById('btnBackupJSON').addEventListener('click',async()=>{const datos={clientes:await allClientes(),servicios:await allServicios(),movimientos:await allMov()};const blob=new Blob([JSON.stringify(datos,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='respaldo_control_cuentas.json';a.click();});
-if(document.getElementById('btnImportar'))document.getElementById('btnImportar').addEventListener('click',async()=>{const f=document.getElementById('fileRestore').files[0];if(!f)return alert('Selecciona un .json');const text=await f.text();const data=JSON.parse(text);if(!confirm('Importar respaldo?'))return;if(Array.isArray(data.servicios))for(const s of data.servicios)await saveServicio(s);if(Array.isArray(data.clientes))for(const c of data.clientes)await saveCliente(c);if(Array.isArray(data.movimientos))for(const m of data.movimientos)await addMov(m);await refreshServiciosSelect();await renderClientes();await renderMovimientos();alert('Respaldo importado');});
-if(document.getElementById('btnClearDB'))document.getElementById('btnClearDB').addEventListener('click',()=>{indexedDB.deleteDatabase('control-cuentas');alert('Base borrada. Recargá.');});
+  // Renovar
+  $('#btnRenovar')?.addEventListener('click', async ()=>{
+    const id = parseInt(($('#clienteId').value||'').trim(),10);
+    if (!Number.isFinite(id) || id<=0) return alert('Seleccioná un cliente');
+    const data = await allClientes();
+    const c = data.find(x=>x.id===id);
+    if (!c) return;
 
-async function renderServicios(){const tb=document.querySelector('#tablaSvc tbody');if(!tb)return;tb.innerHTML='';const list=await allServicios();list.sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));for(const s of list){const tr=document.createElement('tr');tr.innerHTML=`<td>${s.nombre}</td><td>${s.mensual||0}</td><td>${s.anual||0}</td><td>${s.grupo||''}</td>`;tr.addEventListener('click',()=>{document.getElementById('servicioId').value=s.id||'';document.getElementById('svcNombre').value=s.nombre||'';document.getElementById('svcGrupo').value=s.grupo||'';document.getElementById('svcMensual').value=s.mensual||0;document.getElementById('svcAnual').value=s.anual||0;});tb.appendChild(tr);}}
-if(document.getElementById('formServicio'))document.getElementById('formServicio').addEventListener('submit',async e=>{e.preventDefault();const rawId=(document.getElementById('servicioId').value||'').trim();const id=parseInt(rawId,10);const hasId=Number.isFinite(id)&&id>0;const svc={nombre:(document.getElementById('svcNombre').value||'').toUpperCase(),grupo:document.getElementById('svcGrupo').value||'',mensual:Number(document.getElementById('svcMensual').value||0),anual:Number(document.getElementById('svcAnual').value||0)};if(hasId)svc.id=id;await saveServicio(svc);await refreshServiciosSelect();await renderServicios();alert('Servicio guardado');});
-if(document.getElementById('svcNuevo'))document.getElementById('svcNuevo').addEventListener('click',()=>{document.getElementById('formServicio').reset();document.getElementById('servicioId').value='';});
+    const base = new Date(c.fin || c.inicio || new Date());
+    c.fin = fmtDate((c.plan==='anual') ? addYears(base,1) : addMonths(base,1));
+    const np = prompt('Nuevo precio ARS (vacío = mantener):', String(c.precio ?? ''));
+    if (np!==null && np.trim()!==''){
+      const n = Number(np);
+      if (Number.isFinite(n)) c.precio = n;
+    }
+    await saveCliente(c);
+    await addMov({ tipo:'RENOVACIÓN', cliente:`${c.nombre||''} ${c.apellido||''}`, servicio:c.servicio, plan:c.plan, monto:c.precio, notas:'Renovación' });
+    await renderClientes();
+    await renderMovimientos();
+    await renderCalendario();
+    await writeBackupFile();
+  });
+})();
 
-(async function init(){try{await openDB();}catch(e){console.error('DB open error',e);alert('Error inicializando base');return;}await ensureDefaultServices();await refreshServiciosSelect();if(document.getElementById('inicio'))document.getElementById('inicio').value=todayStr();if(document.getElementById('plan'))document.getElementById('plan').value='mensual';if(document.getElementById('fin'))document.getElementById('fin').value=fmtDate(addMonths(new Date(),1));await renderClientes();await renderServicios();await renderMovimientos();})();})();
+/* ============================
+   Exportaciones (opcional)
+=============================*/
+function exportCSV(rows, filename){
+  if (!rows.length){ alert('Sin datos'); return; }
+  const keys = Object.keys(rows[0]);
+  const header = keys.join(',');
+  const body = rows.map(r=> keys.map(k=>`"${String(r[k]??'').replaceAll('"','""')}"`).join(',')).join('\n');
+  const blob = new Blob([header+'\n'+body], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+$('#exportCSV')?.addEventListener('click', async ()=>{
+  const d = await allClientes();
+  const rows = d.map(c=>({
+    id:c.id,
+    cliente:`${c.nombre||''} ${c.apellido||''}`,
+    email:c.email,
+    servicio:c.servicio,
+    plan:c.plan,
+    precio:c.precio,
+    inicio:fmtDate(c.inicio),
+    fin:fmtDate(c.fin),
+    dias:daysBetween(new Date(), new Date(c.fin)),
+    estado:calcEstado(c.fin).label,
+    notas:c.notas||''
+  }));
+  exportCSV(rows,'clientes.csv');
+});
+
+/* ============================
+   Movimientos (UI)
+=============================*/
+async function renderMovimientos(){
+  const data = await allMov();
+  const tb = $('#tablaMov tbody');
+  if (!tb) return;
+  tb.innerHTML = '';
+  data.sort((a,b)=> new Date(b.fecha) - new Date(a.fecha));
+  for (const m of data){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${new Date(m.fecha).toLocaleString()}</td>
+      <td>${m.tipo}</td>
+      <td>${m.cliente||''}</td>
+      <td>${m.servicio||''}</td>
+      <td>${m.plan||''}</td>
+      <td>${m.monto||0}</td>
+      <td>${m.notas||''}</td>
+    `;
+    tb.appendChild(tr);
+  }
+}
+
+/* ============================
+   Calendario
+=============================*/
+let calRef = new Date();
+
+function monthMatrix(date){
+  const y = date.getFullYear(), m = date.getMonth();
+  const first = new Date(y,m,1);
+  const start = (first.getDay() + 6) % 7; // lunes=0
+  const days = new Date(y,m+1,0).getDate();
+  const mat = [];
+  let row = [];
+  for (let i=0;i<start;i++) row.push(null);
+  for (let d=1; d<=days; d++){
+    row.push(new Date(y,m,d));
+    if (row.length===7){ mat.push(row); row=[]; }
+  }
+  while (row.length<7) row.push(null);
+  mat.push(row);
+  return mat;
+}
+
+async function renderCalendario(){
+  const grid  = $('#calGrid');
+  const title = $('#calTitulo');
+  if (!grid || !title) return;
+
+  grid.innerHTML = '';
+  title.textContent = calRef.toLocaleString('es-AR',{month:'long',year:'numeric'});
+
+  const clientes = await allClientes();
+  const dueMap = new Map(); // 'YYYY-MM-DD' -> [nombres]
+  for (const c of clientes){
+    const k = fmtDate(c.fin);
+    if (!dueMap.has(k)) dueMap.set(k, []);
+    dueMap.get(k).push(`${c.nombre||''} ${c.apellido||''}`.trim());
+  }
+  const today = fmtDate(new Date());
+  for (const wk of monthMatrix(calRef)){
+    for (const d of wk){
+      const cell = document.createElement('div');
+      cell.className = 'calCell';
+      if (!d){ grid.appendChild(cell); continue; }
+      const ds = fmtDate(d);
+      if (dueMap.has(ds)) cell.classList.add('calDue');   // Amarillo
+      if (ds === today) cell.classList.add('calToday');   // Borde celeste
+      const items = (dueMap.get(ds)||[]).map(n=>`<span class="calTag">${n}</span>`).join('');
+      cell.innerHTML = `<div class="calDay">${d.getDate()}</div>${items}`;
+      grid.appendChild(cell);
+    }
+  }
+}
+
+$('#prevMes')?.addEventListener('click', ()=>{ calRef = new Date(calRef.getFullYear(), calRef.getMonth()-1, 1); renderCalendario(); });
+$('#nextMes')?.addEventListener('click', ()=>{ calRef = new Date(calRef.getFullYear(), calRef.getMonth()+1, 1); renderCalendario(); });
+
+/* ============================
+   Respaldo manual / Import / Limpiar DB
+=============================*/
+$('#btnBackupJSON')?.addEventListener('click', async ()=>{
+  const datos = { clientes:await allClientes(), servicios:await allServicios(), movimientos:await allMov() };
+  const blob = new Blob([JSON.stringify(datos,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'respaldo_control_cuentas.json';
+  a.click();
+});
+
+$('#btnImportar')?.addEventListener('click', async ()=>{
+  const f = $('#fileRestore')?.files?.[0];
+  if (!f) return alert('Seleccioná un .json');
+  const text = await f.text();
+  const data = JSON.parse(text);
+  if (!confirm('Importar respaldo? Esto agregará/actualizará datos.')) return;
+
+  if (Array.isArray(data.servicios))  for (const s of data.servicios)  await saveServicio(s);
+  if (Array.isArray(data.clientes))   for (const c of data.clientes)   await saveCliente(c);
+  if (Array.isArray(data.movimientos))for (const m of data.movimientos)await addMov(m);
+
+  await refreshServiciosSelect();
+  await renderClientes();
+  await renderMovimientos();
+  await renderCalendario();
+  await writeBackupFile();
+  alert('Respaldo importado.');
+});
+
+$('#btnClearDB')?.addEventListener('click', ()=>{
+  indexedDB.deleteDatabase('control-cuentas');
+  alert('Base borrada. Recargá la página.');
+});
+
+$('#btnConfigAutoBackup')?.addEventListener('click', configureAutoBackup);
+
+/* ============================
+   Init
+=============================*/
+(async function init(){
+  try{ await openDB(); }
+  catch(e){ console.error('DB open error',e); alert('Error inicializando base'); return; }
+
+  await ensurePersistentStorage();
+  await ensureDefaultServices();
+  await refreshServiciosSelect();
+
+  // Defaults de formulario
+  if ($('#plan'))   $('#plan').value   = 'mensual';
+  if ($('#inicio')) $('#inicio').value = todayStr();
+  if ($('#fin'))    $('#fin').value    = fmtDate(addMonths(new Date(),1));
+
+  // Primera carga
+  await renderClientes();
+  await renderMovimientos();
+  await renderCalendario();
+
+  // Backup periódico (además del automático por evento)
+  setInterval(writeBackupFile, 60000);
+})();
+})();
