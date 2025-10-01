@@ -47,9 +47,35 @@ input,select,textarea{width:100%;background:#0e1318;color:var(--t);border:1px so
 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><strong>Exportar</strong><button class="btn" id="exportCSV">CSV</button><button class="btn" id="exportXLS">Excel (.xls)</button><button class="btn" id="exportPDF">PDF</button></div>
 <table id="tablaClientes"><thead><tr><th>Cliente</th><th>Servicio/Plan</th><th>Fechas</th><th>Precio</th><th>Estado</th></tr></thead><tbody></tbody></table>
 </div></div></section>
-<section id="calendario"><div class="card"><h2>Calendario</h2><div id="gridCal">(Calendario listo)</div></div></section>
+<section id="calendario"><div class="card">
+    <div class="calHead">
+      <div class="row">
+        <button class="btn" id="prevMes">◀</button>
+        <div id="calTitulo"></div>
+        <button class="btn" id="nextMes">▶</button>
+      </div>
+      <div class="note">Los vencimientos se pintan en <b style="color:#ffd666">amarillo</b>.</div>
+    </div>
+    <div class="calGrid" id="calGrid"></div>
+  </div>
+</section>
 <section id="movimientos"><div class="card"><h2>Movimientos</h2><table id="tablaMov"><thead><tr><th>Fecha</th><th>Tipo</th><th>Cliente</th><th>Servicio</th><th>Plan</th><th>Monto</th><th>Notas</th></tr></thead><tbody></tbody></table></div></section>
 <section id="servicios"><div class="card"><h2>Servicios</h2><form id="formServicio" style="display:flex;gap:8px;flex-wrap:wrap"><input type="hidden" id="servicioId"><input id="svcNombre" placeholder="Nombre del servicio (ej. NETFLIX)"><input id="svcGrupo" placeholder="Grupo (ej. Streaming)"><input id="svcMensual" type="number" step="0.01" placeholder="Mensual ARS"><input id="svcAnual" type="number" step="0.01" placeholder="Anual ARS"><button class="btn primary" type="submit">Guardar servicio</button><button class="btn" id="svcNuevo" type="button">Nuevo</button></form><table id="tablaSvc"><thead><tr><th>Servicio</th><th>Mensual</th><th>Anual</th><th>Grupo</th></tr></thead><tbody></tbody></table></div></section>
-<section id="respaldo"><div class="card"><h2>Respaldo</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="btnBackupJSON">Exportar respaldo (.json)</button><input type="file" id="fileRestore" accept="application/json"><button class="btn" id="btnImportar">Importar respaldo</button><button class="btn" id="btnClearDB">Reparar datos (borrar base)</button></div></div></section>
-</main>
+<section id="respaldo">
+  <div class="card">
+    <h2>Respaldo</h2>
+    <div class="row">
+      <button class="btn" id="btnBackupJSON">Exportar respaldo (.json)</button>
+      <input type="file" id="fileRestore" accept="application/json">
+      <button class="btn" id="btnImportar">Importar respaldo</button>
+      <button class="btn" id="btnClearDB">Reparar datos (borrar base)</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn primary" id="btnConfigAutoBackup">
+        Configurar respaldo automático (archivo local)
+      </button>
+      <div class="note">Se guardará en ese archivo automáticamente ante cada cambio.</div>
+    </div>
+  </div>
+</section>
 <script src="./app.js"></script></body></html>
