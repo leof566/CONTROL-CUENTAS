@@ -18,7 +18,16 @@ input,select,textarea{width:100%;background:#0e1318;color:var(--t);border:1px so
 .c-name{font-weight:700}.c-sub{color:var(--mut);font-size:.9rem}.num{text-align:right}.nowrap{white-space:nowrap}
 .status{padding:3px 8px;border:1px solid var(--b);border-radius:999px;font-size:.8rem;display:inline-block}
 .status.hoy{background:#2f2a00;border-color:#6e6200}.status.vencido{background:#2f0000;border-color:#6e0000}.status.activo{background:#002f1e;border-color:#006e49}
-</style></head><body>
+</style>
+  .calHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .calGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .calCell{min-height:90px;border:1px solid var(--b);border-radius:10px;padding:6px;position:relative}
+  .calDay{position:absolute;top:6px;right:8px;color:var(--mut);font-size:.8rem}
+  .calDue{background:#2f2a00;border-color:#6e6200}
+  .calToday{outline:2px solid #33b1ff}
+  .calTag{display:block;margin-top:20px;font-size:.8rem;padding:2px 6px;border-radius:999px;background:#0f1621;border:1px solid var(--b)}
+</style>
+</head><body>
 <header><div class="wrap"><h1>📦 CONTROL CUENTAS</h1><nav id="tabs">
 <button data-tab="clientes" class="active">Clientes</button><button data-tab="calendario">Calendario</button><button data-tab="movimientos">Movimientos</button><button data-tab="servicios">Servicios</button><button data-tab="respaldo">Respaldo</button>
 </nav></div></header>
